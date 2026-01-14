@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERPEscolar.API", "ERPEscolar.API\ERPEscolar.API.csproj", "{A5BE5BB4-8A8C-4741-B6CF-6C74B656527E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5BE5BB4-8A8C-4741-B6CF-6C74B656527E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5BE5BB4-8A8C-4741-B6CF-6C74B656527E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5BE5BB4-8A8C-4741-B6CF-6C74B656527E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5BE5BB4-8A8C-4741-B6CF-6C74B656527E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
