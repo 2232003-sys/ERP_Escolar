@@ -1,4 +1,5 @@
 using AutoMapper;
+using ERPEscolar.API.Core.Exceptions;
 using ERPEscolar.API.Data;
 using ERPEscolar.API.DTOs.ControlEscolar;
 using ERPEscolar.API.Models;
@@ -92,7 +93,10 @@ public class GrupoService : IGrupoService
         var validationResult = await _createValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
-            throw new ValidationException(validationResult.Errors);
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            throw new Core.Exceptions.ValidationException(errors);
         }
 
         // Verificar que la escuela existe y está activa
@@ -235,7 +239,10 @@ public class GrupoService : IGrupoService
         var validationResult = await _updateValidator.ValidateAsync(request);
         if (!validationResult.IsValid)
         {
-            throw new ValidationException(validationResult.Errors);
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            throw new Core.Exceptions.ValidationException(errors);
         }
 
         // Obtener grupo y verificar que existe y está activo
@@ -359,20 +366,4 @@ public class GrupoService : IGrupoService
         return await _context.Grupos
             .AnyAsync(g => g.Id == id && g.Activo);
     }
-}
-
-/// <summary>
-/// Excepción personalizada para errores de validación de negocio.
-/// </summary>
-public class BusinessException : Exception
-{
-    public BusinessException(string message) : base(message) { }
-}
-
-/// <summary>
-/// Excepción personalizada para recursos no encontrados.
-/// </summary>
-public class NotFoundException : Exception
-{
-    public NotFoundException(string message) : base(message) { }
 }

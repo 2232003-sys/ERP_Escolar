@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using ERPEscolar.API.Core.Exceptions;
 using ERPEscolar.API.Infrastructure.Services;
 using ERPEscolar.API.DTOs.ControlEscolar;
 using FluentValidation;
@@ -100,12 +101,9 @@ public class GruposController : ControllerBase
             var grupo = await _grupoService.CreateGrupoAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = grupo.Id }, grupo);
         }
-        catch (ValidationException ex)
+        catch (Core.Exceptions.ValidationException ex)
         {
-            var errors = ex.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-            return BadRequest(new { message = "Validación fallida", errors });
+            return BadRequest(new { message = "Validación fallida", errors = ex.Errors });
         }
         catch (BusinessException ex)
         {
@@ -138,12 +136,9 @@ public class GruposController : ControllerBase
             var grupo = await _grupoService.UpdateGrupoAsync(id, request);
             return Ok(grupo);
         }
-        catch (ValidationException ex)
+        catch (Core.Exceptions.ValidationException ex)
         {
-            var errors = ex.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-            return BadRequest(new { message = "Validación fallida", errors });
+            return BadRequest(new { message = "Validación fallida", errors = ex.Errors });
         }
         catch (BusinessException ex)
         {

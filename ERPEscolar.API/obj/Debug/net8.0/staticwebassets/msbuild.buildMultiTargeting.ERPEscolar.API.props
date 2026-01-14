@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\ERPEscolar.API.props" />
+</Project>

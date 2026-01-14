@@ -31,7 +31,7 @@ public class ValidationException : Exception
         Errors = errors;
     }
 
-    public Dictionary<string, string[]> Errors { get; }
+    public Dictionary<string, string[]> Errors { get; } = new();
 
     private static string FormatErrors(Dictionary<string, string[]> errors)
     {

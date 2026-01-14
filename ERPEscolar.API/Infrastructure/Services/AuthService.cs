@@ -167,7 +167,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> ValidateTokenAsync(string token)
+    public Task<bool> ValidateTokenAsync(string token)
     {
         try
         {
@@ -186,15 +186,15 @@ public class AuthService : IAuthService
                 ClockSkew = TimeSpan.Zero
             }, out SecurityToken validatedToken);
 
-            return true;
+            return Task.FromResult(true);
         }
         catch
         {
-            return false;
+            return Task.FromResult(false);
         }
     }
 
-    public async Task<int?> GetUserIdFromTokenAsync(string token)
+    public Task<int?> GetUserIdFromTokenAsync(string token)
     {
         try
         {
@@ -204,14 +204,14 @@ public class AuthService : IAuthService
             var userIdClaim = jwtToken?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
             {
-                return userId;
+                return Task.FromResult((int?)userId);
             }
 
-            return null;
+            return Task.FromResult((int?)null);
         }
         catch
         {
-            return null;
+            return Task.FromResult((int?)null);
         }
     }
 
