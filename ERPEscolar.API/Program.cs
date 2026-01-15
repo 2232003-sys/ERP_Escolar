@@ -49,7 +49,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Registrar AutoMapper - incluir todos los profiles
-builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CalificacionProfile), typeof(ColegiaturaProfile), typeof(CFDIProfile));
+builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CalificacionProfile), typeof(ColegiaturaProfile), typeof(CFDIProfile), typeof(PagoProfile));
 
 // Registrar FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -81,6 +81,11 @@ builder.Services.AddScoped<IValidator<UpdateCFDIDto>, UpdateCFDIValidator>();
 builder.Services.AddScoped<IValidator<TimbrarCFDIDto>, TimbrarCFDIValidator>();
 builder.Services.AddScoped<IValidator<CancelarCFDIDto>, CancelarCFDIValidator>();
 
+// Registrar validadores explícitamente para inyección en servicios - Pago
+builder.Services.AddScoped<IValidator<CreatePagoDto>, CreatePagoValidator>();
+builder.Services.AddScoped<IValidator<UpdatePagoDto>, UpdatePagoValidator>();
+builder.Services.AddScoped<IValidator<PagoTransferenciaDto>, PagoTransferenciaValidator>();
+
 // Registrar servicios
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -91,6 +96,7 @@ builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
 builder.Services.AddScoped<ICalificacionService, CalificacionService>();
 builder.Services.AddScoped<IColegiaturaService, ColegiaturaService>();
 builder.Services.AddScoped<ICFDIService, CFDIService>();
+builder.Services.AddScoped<IPagoService, PagoService>();
 
 // API controllers
 builder.Services.AddControllers();

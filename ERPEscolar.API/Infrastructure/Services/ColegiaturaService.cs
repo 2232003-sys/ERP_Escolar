@@ -441,7 +441,7 @@ public class ColegiaturaService : IColegiaturaService
             FechaVencimiento = colegiatura.FechaVencimiento,
             FechaPago = colegiatura.FechaPago,
             Observacion = colegiatura.Observacion,
-            Pagos = colegiatura.Pagos?.Select(p => new PagoDto
+            Pagos = colegiatura.Pagos?.Select(p => new PagoBasicDto
             {
                 Id = p.Id,
                 Monto = p.Monto,

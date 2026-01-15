@@ -79,6 +79,6 @@ public class ColegiaturaProfile : Profile
 
         CreateMap<CicloEscolar, CicloEscolarDto>();
 
-        CreateMap<Pago, PagoDto>();
+        CreateMap<Pago, PagoBasicDto>();
     }
 }

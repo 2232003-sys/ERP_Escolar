@@ -19,6 +19,14 @@ public class BusinessException : Exception
 }
 
 /// <summary>
+/// Excepción para solicitudes incorrectas (ej: operación no permitida).
+/// </summary>
+public class BadRequestException : Exception
+{
+    public BadRequestException(string message) : base(message) { }
+}
+
+/// <summary>
 /// Excepción cuando hay error de validación (ej: campo requerido vacío).
 /// </summary>
 public class ValidationException : Exception

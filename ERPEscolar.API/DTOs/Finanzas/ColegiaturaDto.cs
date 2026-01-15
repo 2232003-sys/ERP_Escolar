@@ -293,7 +293,7 @@ public class ColegiaturaFullDataDto
     /// <summary>
     /// Lista de pagos asociados
     /// </summary>
-    public List<PagoDto> Pagos { get; set; } = [];
+    public List<PagoBasicDto> Pagos { get; set; } = [];
 }
 
 /// <summary>

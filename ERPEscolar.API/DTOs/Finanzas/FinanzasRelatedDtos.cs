@@ -78,7 +78,7 @@ public class CicloEscolarDto
 /// <summary>
 /// DTO básico de Pago para relaciones en Finanzas
 /// </summary>
-public class PagoDto
+public class PagoBasicDto
 {
     /// <summary>
     /// Identificador único del pago
