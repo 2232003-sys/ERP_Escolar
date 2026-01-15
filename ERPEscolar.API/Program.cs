@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -77,18 +78,18 @@ builder.Services.AddScoped<IValidator<UpdateCalificacionDto>, UpdateCalificacion
 
 // Registrar validadores explícitamente para inyección en servicios - CFDI
 builder.Services.AddScoped<IValidator<CreateCFDIDto>, CreateCFDIValidator>();
-builder.Services.AddScoped<IValidator<UpdateCFDIDto>, UpdateCFDIValidator>();
+builder.Services.AddScoped<IValidator<UpdateCFDIDto>, UpdateCFDIDtoValidator>();
 builder.Services.AddScoped<IValidator<TimbrarCFDIDto>, TimbrarCFDIValidator>();
 builder.Services.AddScoped<IValidator<CancelarCFDIDto>, CancelarCFDIValidator>();
 
 // Registrar validadores explícitamente para inyección en servicios - Pago
 builder.Services.AddScoped<IValidator<CreatePagoDto>, CreatePagoValidator>();
-builder.Services.AddScoped<IValidator<UpdatePagoDto>, UpdatePagoValidator>();
+builder.Services.AddScoped<IValidator<UpdatePagoDto>, UpdatePagoDtoValidator>();
 builder.Services.AddScoped<IValidator<PagoTransferenciaDto>, PagoTransferenciaValidator>();
 
 // Registrar validadores explícitamente para inyección en servicios - Beca
 builder.Services.AddScoped<IValidator<CreateBecaDto>, CreateBecaValidator>();
-builder.Services.AddScoped<IValidator<UpdateBecaDto>, UpdateBecaValidator>();
+builder.Services.AddScoped<IValidator<UpdateBecaDto>, UpdateBecaDtoValidator>();
 
 // Registrar servicios
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -101,8 +102,9 @@ builder.Services.AddScoped<ICalificacionService, CalificacionService>();
 builder.Services.AddScoped<IColegiaturaService, ColegiaturaService>();
 builder.Services.AddScoped<ICFDIService, CFDIService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
-builder.Services.AddScoped<IEstadoCuentaService, EstadoCuentaService>();
+builder.Services.AddScoped<EstadoCuentaService>(); // Registrado correctamente
 builder.Services.AddScoped<IBecaService, BecaService>();
+builder.Services.AddScoped<FinanzasService>();
 
 // API controllers
 builder.Services.AddControllers();

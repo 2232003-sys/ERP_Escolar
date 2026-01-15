@@ -1,141 +1,101 @@
-using ERPEscolar.API.Core.Exceptions;
+
 using ERPEscolar.API.Data;
 using ERPEscolar.API.DTOs.Finanzas;
-using ERPEscolar.API.Models;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ERPEscolar.API.Infrastructure.Services;
 
-public interface IEstadoCuentaService
-{
-    Task<EstadoCuentaDto> GetEstadoCuentaAsync(int alumnoId);
-    Task<EstadoCuentaHistorialDto> GetHistorialEstadosCuentaAsync(int alumnoId, DateTime? desde = null, DateTime? hasta = null);
-    Task<byte[]> GenerarEstadoCuentaPdfAsync(int alumnoId);
-    Task EnviarEstadoCuentaPorEmailAsync(int alumnoId, EnviarEstadoCuentaEmailDto dto);
-}
-
-public class EstadoCuentaService : IEstadoCuentaService
+/// <summary>
+/// Servicio para generar y gestionar los estados de cuenta de los alumnos.
+/// </summary>
+public class EstadoCuentaService
 {
     private readonly AppDbContext _context;
-    private readonly IMapper _mapper;
 
-    public EstadoCuentaService(AppDbContext context, IMapper mapper)
+    public EstadoCuentaService(AppDbContext context)
     {
         _context = context;
-        _mapper = mapper;
     }
 
+    /// <summary>
+    /// Obtiene el estado de cuenta completo y actual de un alumno.
+    /// </summary>
+    /// <param name="alumnoId">El ID del alumno.</param>
+    /// <returns>Un DTO con el estado de cuenta completo.</returns>
+    /// <exception cref="Exception">Si el alumno no se encuentra.</exception>
     public async Task<EstadoCuentaDto> GetEstadoCuentaAsync(int alumnoId)
     {
         var alumno = await _context.Alumnos
-            .Include(a => a.Cargos.Where(c => c.Activo))
-                .ThenInclude(c => c.ConceptoCobro)
-            .Include(a => a.Cargos.Where(c => c.Activo))
-                .ThenInclude(c => c.Pagos.Where(p => p.Activo))
-            .FirstOrDefaultAsync(a => a.Id == alumnoId && a.Activo);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == alumnoId);
 
         if (alumno == null)
         {
-            throw new NotFoundException("Alumno no encontrado");
+            throw new Exception($"No se encontró un alumno con el ID {alumnoId}.");
         }
+
+        var cargos = await _context.Cargos
+            .AsNoTracking()
+            .Where(c => c.AlumnoId == alumnoId && c.Activo)
+            .Include(c => c.ConceptoCobro)
+            .OrderByDescending(c => c.FechaEmision)
+            .ToListAsync();
+
+        var pagos = await _context.Pagos
+            .AsNoTracking()
+            .Where(p => p.AlumnoId == alumnoId && p.Activo)
+            .OrderByDescending(p => p.FechaPago)
+            .ToListAsync();
+
+        var totalCargos = cargos.Sum(c => c.Total);
+        var totalPagos = pagos.Where(p => p.Estado == "Verificado").Sum(p => p.Monto);
 
         var estadoCuenta = new EstadoCuentaDto
         {
             AlumnoId = alumno.Id,
-            AlumnoNombre = $"{alumno.Nombre} {alumno.Apellido}",
-            Matricula = alumno.Matricula ?? "Sin matrícula",
-            FechaGeneracion = DateTime.UtcNow
+            AlumnoNombre = $"{alumno.Nombres} {alumno.ApellidoPaterno} {alumno.ApellidoMaterno}",
+            Matricula = alumno.Matricula,
+            TotalCargos = totalCargos,
+            TotalPagos = totalPagos,
+            SaldoPendiente = totalCargos - totalPagos,
+            FechaGeneracion = DateTime.UtcNow,
+
+            Cargos = cargos.Select(c => new CargoEstadoDto
+            {
+                Id = c.Id,
+                Folio = c.Folio,
+                Mes = c.Mes,
+                Monto = c.Monto,
+                Descuento = c.Descuento,
+                Recargo = c.Recargo,
+                Subtotal = c.Monto - c.Descuento,
+                IVA = c.IVA,
+                Total = c.Total,
+                Estado = c.Estado,
+                MontoRecibido = c.MontoRecibido,
+                FechaEmision = c.FechaEmision,
+                FechaVencimiento = c.FechaVencimiento,
+                Concepto = c.ConceptoCobro?.Nombre ?? "N/A",
+            }).ToList(),
+
+            Pagos = pagos.Select(p => new PagoEstadoDto
+            {
+                Id = p.Id,
+                Folio = p.Folio,
+                Monto = p.Monto,
+                Metodo = p.Metodo,
+                Estado = p.Estado,
+                FechaPago = p.FechaPago,
+                ReferenciaExterna = p.ReferenciaExterna
+            }).ToList()
         };
 
-        // Calcular totales
-        foreach (var cargo in alumno.Cargos)
-        {
-            estadoCuenta.TotalCargos += cargo.Total;
-            estadoCuenta.TotalPagos += cargo.MontoRecibido;
-
-            var cargoEstado = new CargoEstadoDto
-            {
-                Id = cargo.Id,
-                Folio = cargo.Folio,
-                Mes = cargo.Mes,
-                Monto = cargo.Monto,
-                Descuento = cargo.Descuento,
-                Recargo = cargo.Recargo,
-                Subtotal = cargo.Subtotal,
-                IVA = cargo.IVA,
-                Total = cargo.Total,
-                Estado = cargo.Estado,
-                MontoRecibido = cargo.MontoRecibido,
-                FechaEmision = cargo.FechaEmision,
-                FechaVencimiento = cargo.FechaVencimiento,
-                Concepto = cargo.ConceptoCobro?.Nombre ?? "Sin concepto"
-            };
-
-            estadoCuenta.Cargos.Add(cargoEstado);
-
-            // Agregar pagos del cargo
-            foreach (var pago in cargo.Pagos)
-            {
-                var pagoEstado = new PagoEstadoDto
-                {
-                    Id = pago.Id,
-                    Folio = pago.Folio,
-                    Monto = pago.Monto,
-                    Metodo = pago.Metodo,
-                    Estado = pago.Estado,
-                    FechaPago = pago.FechaPago,
-                    ReferenciaExterna = pago.ReferenciaExterna
-                };
-
-                estadoCuenta.Pagos.Add(pagoEstado);
-            }
-        }
-
-        estadoCuenta.SaldoActual = estadoCuenta.TotalCargos - estadoCuenta.TotalPagos;
-        estadoCuenta.SaldoPendiente = estadoCuenta.Cargos
-            .Where(c => c.Estado != "Pagado")
-            .Sum(c => c.Total - c.MontoRecibido);
+        // Calcular saldo actual (puede ser diferente al pendiente si hay pagos no verificados)
+        estadoCuenta.SaldoActual = estadoCuenta.SaldoPendiente; // Simplificado por ahora
 
         return estadoCuenta;
-    }
-
-    public async Task<EstadoCuentaHistorialDto> GetHistorialEstadosCuentaAsync(int alumnoId, DateTime? desde = null, DateTime? hasta = null)
-    {
-        // For now, return current state. In a real implementation, you might store historical snapshots
-        var estadoActual = await GetEstadoCuentaAsync(alumnoId);
-
-        return new EstadoCuentaHistorialDto
-        {
-            EstadosCuenta = new[] { estadoActual },
-            TotalCount = 1
-        };
-    }
-
-    public async Task<byte[]> GenerarEstadoCuentaPdfAsync(int alumnoId)
-    {
-        var estadoCuenta = await GetEstadoCuentaAsync(alumnoId);
-
-        // TODO: Implement PDF generation using a library like iTextSharp or similar
-        // For now, return a simple byte array placeholder
-        var pdfContent = $"Estado de Cuenta - {estadoCuenta.AlumnoNombre}\n" +
-                        $"Saldo Actual: {estadoCuenta.SaldoActual:C}\n" +
-                        $"Saldo Pendiente: {estadoCuenta.SaldoPendiente:C}\n" +
-                        $"Fecha: {estadoCuenta.FechaGeneracion}";
-
-        return System.Text.Encoding.UTF8.GetBytes(pdfContent);
-    }
-
-    public async Task EnviarEstadoCuentaPorEmailAsync(int alumnoId, EnviarEstadoCuentaEmailDto dto)
-    {
-        var estadoCuenta = await GetEstadoCuentaAsync(alumnoId);
-        var pdfBytes = await GenerarEstadoCuentaPdfAsync(alumnoId);
-
-        // TODO: Implement email sending using a service like SendGrid, SMTP, etc.
-        // For now, just log the action
-        Console.WriteLine($"Enviando estado de cuenta por email a {dto.Email} para alumno {estadoCuenta.AlumnoNombre}");
-
-        // Simulate email sending
-        await Task.CompletedTask;
     }
 }

@@ -11,6 +11,8 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.0.2",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -25,6 +27,8 @@
     "postcss": "^8",
     "react": "^18",
     "react-dom": "^18",
+    "react-dropzone": "^14.3.8",
+    "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"

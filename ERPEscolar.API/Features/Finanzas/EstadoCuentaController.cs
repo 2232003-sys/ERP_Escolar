@@ -1,51 +1,46 @@
-using ERPEscolar.API.DTOs.Finanzas;
+
 using ERPEscolar.API.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace ERPEscolar.API.Features.Finanzas;
 
-[Authorize]
 [ApiController]
-[Route("api/finanzas/estado-cuenta")]
+[Route("api/estado-cuenta")]
+[Authorize] // Proteger todo el controlador
 public class EstadoCuentaController : ControllerBase
 {
-    private readonly IEstadoCuentaService _estadoCuentaService;
+    private readonly EstadoCuentaService _estadoCuentaService;
 
-    public EstadoCuentaController(IEstadoCuentaService estadoCuentaService)
+    public EstadoCuentaController(EstadoCuentaService estadoCuentaService)
     {
         _estadoCuentaService = estadoCuentaService;
     }
 
-    [HttpGet("{alumnoId}")]
-    public async Task<ActionResult<EstadoCuentaDto>> GetEstadoCuenta(int alumnoId)
+    /// <summary>
+    /// Obtiene el estado de cuenta financiero completo de un alumno específico.
+    /// </summary>
+    /// <param name="alumnoId">El ID del alumno a consultar.</param>
+    /// <returns>Un DTO con el detalle de cargos, pagos y saldo del alumno.</returns>
+    [HttpGet("{alumnoId:int}")]
+    public async Task<IActionResult> GetEstadoCuenta(int alumnoId)
     {
-        var estadoCuenta = await _estadoCuentaService.GetEstadoCuentaAsync(alumnoId);
-        return Ok(estadoCuenta);
-    }
+        if (alumnoId <= 0)
+        {
+            return BadRequest(new { message = "El ID del alumno no es válido." });
+        }
 
-    [HttpGet("{alumnoId}/historial")]
-    public async Task<ActionResult<EstadoCuentaHistorialDto>> GetHistorialEstadosCuenta(
-        int alumnoId,
-        [FromQuery] DateTime? desde = null,
-        [FromQuery] DateTime? hasta = null)
-    {
-        var historial = await _estadoCuentaService.GetHistorialEstadosCuentaAsync(alumnoId, desde, hasta);
-        return Ok(historial);
-    }
-
-    [HttpGet("{alumnoId}/pdf")]
-    public async Task<IActionResult> DescargarEstadoCuentaPdf(int alumnoId)
-    {
-        var pdfBytes = await _estadoCuentaService.GenerarEstadoCuentaPdfAsync(alumnoId);
-
-        return File(pdfBytes, "application/pdf", $"estado-cuenta-{alumnoId}.pdf");
-    }
-
-    [HttpPost("{alumnoId}/enviar-email")]
-    public async Task<IActionResult> EnviarEstadoCuentaPorEmail(int alumnoId, [FromBody] EnviarEstadoCuentaEmailDto dto)
-    {
-        await _estadoCuentaService.EnviarEstadoCuentaPorEmailAsync(alumnoId, dto);
-        return Ok(new { message = "Estado de cuenta enviado por email exitosamente" });
+        try
+        {
+            var estadoCuenta = await _estadoCuentaService.GetEstadoCuentaAsync(alumnoId);
+            return Ok(estadoCuenta);
+        }
+        catch (Exception ex)
+        {
+            // Si el servicio lanza una excepción (ej: alumno no encontrado), devolver un 404.
+            return NotFound(new { message = ex.Message });
+        }
     }
 }

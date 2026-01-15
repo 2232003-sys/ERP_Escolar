@@ -3,11 +3,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import { alumnoService } from '@/services/alumnoService';
 import type { Alumno } from '@/types/alumno';
 
 export default function AlumnosPage() {
+  const router = useRouter();
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +36,7 @@ export default function AlumnosPage() {
     if (window.confirm('¿Estás seguro de que deseas eliminar este alumno? Esta acción no se puede deshacer.')) {
       try {
         await alumnoService.deleteAlumno(id);
-        // Actualiza el estado para reflejar la eliminación en la UI
         setAlumnos(prevAlumnos => prevAlumnos.filter(alumno => alumno.id !== id));
-        // Opcional: mostrar un toast de éxito
         alert('Alumno eliminado con éxito.');
       } catch (err) {
         setError('No se pudo eliminar el alumno. Inténtalo de nuevo.');
@@ -119,11 +119,14 @@ export default function AlumnosPage() {
                           )
                         }
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                        <button onClick={() => router.push(`/portal-alumno/${alumno.id}`)} className="text-green-600 hover:text-green-900 font-semibold">
+                          Ver Portal
+                        </button>
                         <Link href={`/control-escolar/alumnos/editar/${alumno.id}`}>
                            <button className="text-indigo-600 hover:text-indigo-900">Editar</button>
                         </Link>
-                        <button onClick={() => handleDelete(alumno.id)} className="ml-4 text-red-600 hover:text-red-900">
+                        <button onClick={() => handleDelete(alumno.id)} className="text-red-600 hover:text-red-900">
                           Eliminar
                         </button>
                       </td>

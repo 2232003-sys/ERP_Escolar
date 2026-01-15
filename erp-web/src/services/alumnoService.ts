@@ -1,71 +1,43 @@
 
-import { apiClient } from '@/lib/api/client';
+import apiClient from '@/lib/api/client';
+import type { ApiResponse } from '@/lib/api/types';
 import type { Alumno, CreateAlumnoDto, UpdateAlumnoDto } from '@/types/alumno';
+import type { EstadoCuenta } from '@/types/finanzas';
 
-/**
- * Servicio para gestionar las operaciones CRUD de los alumnos.
- */
+
 export const alumnoService = {
-  /**
-   * Obtiene la lista completa de todos los alumnos.
-   */
+
   async getAllAlumnos(): Promise<Alumno[]> {
-    try {
-      const response = await apiClient.get<Alumno[]>('/alumnos');
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener los alumnos:', error);
-      throw error;
-    }
+    const response = await apiClient.get<ApiResponse<Alumno[]>>('/alumnos');
+    return response.data.data;
   },
 
-  /**
-   * Obtiene un único alumno por su ID.
-   */
   async getAlumnoById(id: number): Promise<Alumno> {
-    try {
-      const response = await apiClient.get<Alumno>(`/alumnos/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error al obtener el alumno con ID ${id}:`, error);
-      throw error;
-    }
+    const response = await apiClient.get<ApiResponse<Alumno>>(`/alumnos/${id}`);
+    return response.data.data;
   },
 
-  /**
-   * Crea un nuevo alumno en el sistema.
-   */
-  async createAlumno(data: CreateAlumnoDto): Promise<Alumno> {
-    try {
-      const response = await apiClient.post<Alumno>('/alumnos', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error al crear el alumno:', error);
-      throw error;
-    }
+  async createAlumno(alumnoData: CreateAlumnoDto): Promise<Alumno> {
+    const response = await apiClient.post<ApiResponse<Alumno>>('/alumnos', alumnoData);
+    return response.data.data;
   },
 
-  /**
-   * Actualiza un alumno existente en el sistema.
-   */
-  async updateAlumno(id: number, data: UpdateAlumnoDto): Promise<Alumno> {
-    try {
-      const response = await apiClient.put<Alumno>(`/alumnos/${id}`, data);
-      return response.data;
-    } catch (error) {
-      console.error(`Error al actualizar el alumno con ID ${id}:`, error);
-      throw error;
-    }
+  async updateAlumno(id: number, alumnoData: UpdateAlumnoDto): Promise<Alumno> {
+    const response = await apiClient.put<ApiResponse<Alumno>>(`/alumnos/${id}`, alumnoData);
+    return response.data.data;
   },
 
-  /**
-   * Elimina un alumno del sistema.
-   */
   async deleteAlumno(id: number): Promise<void> {
+    await apiClient.delete(`/alumnos/${id}`);
+  },
+
+  async getEstadoCuenta(alumnoId: number): Promise<ApiResponse<EstadoCuenta>> {
     try {
-      await apiClient.delete(`/alumnos/${id}`);
+      const response = await apiClient.get<ApiResponse<EstadoCuenta>>(
+        `/estado-cuenta/${alumnoId}`
+      );
+      return response.data;
     } catch (error) {
-      console.error(`Error al eliminar el alumno con ID ${id}:`, error);
       throw error;
     }
   },
