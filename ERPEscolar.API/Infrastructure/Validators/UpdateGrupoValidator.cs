@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace ERPEscolar.API.Infrastructure.Validators
 {
-    public class CreateGrupoValidator : AbstractValidator<CreateGrupoDto>
+    public class UpdateGrupoValidator : AbstractValidator<UpdateGrupoDto>
     {
-        public CreateGrupoValidator()
+        public UpdateGrupoValidator()
         {
             RuleFor(g => g.Nombre)
                 .NotEmpty().WithMessage("El nombre del grupo es obligatorio.")

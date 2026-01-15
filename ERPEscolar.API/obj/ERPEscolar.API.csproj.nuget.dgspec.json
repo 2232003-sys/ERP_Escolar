@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\israe\\OneDrive\\Documentos\\ERP_Escolar\\ERPEscolar.API\\ERPEscolar.API.csproj": {}
+    "/home/user/ERP_Escolar/ERPEscolar.API/ERPEscolar.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\israe\\OneDrive\\Documentos\\ERP_Escolar\\ERPEscolar.API\\ERPEscolar.API.csproj": {
+    "/home/user/ERP_Escolar/ERPEscolar.API/ERPEscolar.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\israe\\OneDrive\\Documentos\\ERP_Escolar\\ERPEscolar.API\\ERPEscolar.API.csproj",
+        "projectUniqueName": "/home/user/ERP_Escolar/ERPEscolar.API/ERPEscolar.API.csproj",
         "projectName": "ERPEscolar.API",
-        "projectPath": "C:\\Users\\israe\\OneDrive\\Documentos\\ERP_Escolar\\ERPEscolar.API\\ERPEscolar.API.csproj",
-        "packagesPath": "C:\\Users\\israe\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\israe\\OneDrive\\Documentos\\ERP_Escolar\\ERPEscolar.API\\obj\\",
+        "projectPath": "/home/user/ERP_Escolar/ERPEscolar.API/ERPEscolar.API.csproj",
+        "packagesPath": "/home/user/.nuget/packages/",
+        "outputPath": "/home/user/ERP_Escolar/ERPEscolar.API/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\israe\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/user/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,7 +37,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net8.0": {
@@ -97,6 +98,20 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -105,7 +120,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.417/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/nix/store/3hhkyi53ky9qwjj9vjzg0pyq333vlrla-dotnet-sdk-9.0.203/share/dotnet/sdk/9.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

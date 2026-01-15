@@ -1,396 +1,142 @@
+
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using AutoMapper;
-using ERPEscolar.API.Core.Exceptions;
-using ERPEscolar.API.Data;
-using ERPEscolar.API.DTOs.ControlEscolar;
 using ERPEscolar.API.Models;
-using FluentValidation;
+using ERPEscolar.DTOs.ControlEscolar;
+using ERPEscolar.Infrastructure.Repositories;
+using Microsoft.Extensions.Logging;
+using ERPEscolar.API.Core.Exceptions;
+using System.Linq;
+using System;
 using Microsoft.EntityFrameworkCore;
 
-namespace ERPEscolar.API.Infrastructure.Services;
-
-/// <summary>
-/// Contrato para operaciones de negocio sobre Inscripciones.
-/// Maneja matriculación, desmatriculación, cambios de grupo.
-/// </summary>
-public interface IInscripcionService
+namespace ERPEscolar.Infrastructure.Services
 {
-    /// <summary>
-    /// Crear una nueva inscripción (matricular alumno en grupo).
-    /// Valida: alumno existe, grupo existe, no duplicados, fechas válidas.
-    /// </summary>
-    Task<InscripcionDto> CreateAsync(CreateInscripcionDto request);
-
-    /// <summary>
-    /// Obtener inscripción por ID (solo si está activa).
-    /// </summary>
-    Task<InscripcionDto> GetByIdAsync(int id);
-
-    /// <summary>
-    /// Obtener inscripción con datos relacionados (alumno, grupo, ciclo).
-    /// </summary>
-    Task<InscripcionFullDataDto> GetByIdFullAsync(int id);
-
-    /// <summary>
-    /// Obtener todas las inscripciones con paginación y búsqueda.
-    /// </summary>
-    Task<PaginatedInscripcionesDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null);
-
-    /// <summary>
-    /// Obtener inscripciones de un alumno específico.
-    /// </summary>
-    Task<List<InscripcionDto>> GetByAlumnoAsync(int alumnoId);
-
-    /// <summary>
-    /// Obtener inscripciones de un grupo específico.
-    /// </summary>
-    Task<List<InscripcionDto>> GetByGrupoAsync(int grupoId);
-
-    /// <summary>
-    /// Actualizar inscripción (cambiar grupo, fecha).
-    /// </summary>
-    Task<InscripcionDto> UpdateAsync(int id, UpdateInscripcionDto request);
-
-    /// <summary>
-    /// Desactivar inscripción (soft delete).
-    /// </summary>
-    Task<bool> SoftDeleteAsync(int id);
-
-    /// <summary>
-    /// Reactivar inscripción desactivada.
-    /// </summary>
-    Task<bool> RestoreAsync(int id);
-
-    /// <summary>
-    /// Verificar si una inscripción existe.
-    /// </summary>
-    Task<bool> ExistsAsync(int id);
-}
-
-/// <summary>
-/// Implementación de servicios de negocio para Inscripciones.
-/// Gestiona matriculación, desmatriculación y cambios de grupo.
-/// Valida reglas de negocio: unicidad, integridad referencial, soft delete.
-/// </summary>
-public class InscripcionService : IInscripcionService
-{
-    private readonly AppDbContext _context;
-    private readonly IValidator<CreateInscripcionDto> _createValidator;
-    private readonly IValidator<UpdateInscripcionDto> _updateValidator;
-    private readonly IMapper _mapper;
-    private readonly ILogger<InscripcionService> _logger;
-
-    public InscripcionService(
-        AppDbContext context,
-        IValidator<CreateInscripcionDto> createValidator,
-        IValidator<UpdateInscripcionDto> updateValidator,
-        IMapper mapper,
-        ILogger<InscripcionService> logger)
+    public class InscripcionService : IInscripcionService
     {
-        _context = context;
-        _createValidator = createValidator;
-        _updateValidator = updateValidator;
-        _mapper = mapper;
-        _logger = logger;
-    }
+        private readonly IRepository<Inscripcion> _inscripcionRepository;
+        private readonly IRepository<Alumno> _alumnoRepository;
+        private readonly IRepository<Grupo> _grupoRepository;
+        private readonly ILogger<InscripcionService> _logger;
+        private readonly IMapper _mapper;
 
-    /// <summary>
-    /// Crear una nueva inscripción (matricular alumno en grupo).
-    /// </summary>
-    public async Task<InscripcionDto> CreateAsync(CreateInscripcionDto request)
-    {
-        _logger.LogInformation("Iniciando inscripción de alumno {AlumnoId} en grupo {GrupoId}", 
-            request.AlumnoId, request.GrupoId);
-
-        // Validar con FluentValidation
-        var validationResult = await _createValidator.ValidateAsync(request);
-        if (!validationResult.IsValid)
+        public InscripcionService(
+            IRepository<Inscripcion> inscripcionRepository, 
+            IRepository<Alumno> alumnoRepository, 
+            IRepository<Grupo> grupoRepository, 
+            ILogger<InscripcionService> logger, 
+            IMapper mapper)
         {
-            var errors = validationResult.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-            throw new Core.Exceptions.ValidationException(errors);
+            _inscripcionRepository = inscripcionRepository;
+            _alumnoRepository = alumnoRepository;
+            _grupoRepository = grupoRepository;
+            _logger = logger;
+            _mapper = mapper;
         }
 
-        // Verificar que el alumno existe y está activo
-        var alumno = await _context.Alumnos.FindAsync(request.AlumnoId);
-        if (alumno == null || !alumno.Activo)
-            throw new NotFoundException("Alumno", request.AlumnoId);
-
-        // Verificar que el grupo existe y está activo
-        var grupo = await _context.Grupos.FindAsync(request.GrupoId);
-        if (grupo == null || !grupo.Activo)
-            throw new NotFoundException("Grupo", request.GrupoId);
-
-        // Verificar que el ciclo escolar existe y está activo
-        var ciclo = await _context.CiclosEscolares.FindAsync(request.CicloEscolarId);
-        if (ciclo == null || !ciclo.Activo)
-            throw new NotFoundException("CicloEscolar", request.CicloEscolarId);
-
-        // Verificar que el ciclo del grupo coincide con el solicitado
-        if (grupo.CicloEscolarId != request.CicloEscolarId)
-            throw new BusinessException($"El grupo {grupo.Nombre} no pertenece al ciclo escolar especificado.");
-
-        // Verificar que el alumno está en la misma escuela que el grupo
-        if (alumno.SchoolId != grupo.SchoolId)
-            throw new BusinessException("El alumno y el grupo deben estar en la misma escuela.");
-
-        // Verificar que no existe una inscripción activa del alumno en este grupo en este ciclo
-        var inscripcionExistente = await _context.Inscripciones
-            .FirstOrDefaultAsync(i => i.AlumnoId == request.AlumnoId 
-                && i.GrupoId == request.GrupoId 
-                && i.CicloEscolarId == request.CicloEscolarId
-                && i.Activo);
-
-        if (inscripcionExistente != null)
-            throw new BusinessException($"El alumno ya está inscrito en el grupo {grupo.Nombre} en este ciclo.");
-
-        // Crear inscripción
-        var inscripcion = new Inscripcion
+        public async Task<InscripcionDto> CreateInscripcionAsync(CreateInscripcionDto request)
         {
-            AlumnoId = request.AlumnoId,
-            GrupoId = request.GrupoId,
-            CicloEscolarId = request.CicloEscolarId,
-            FechaInscripcion = request.FechaInscripcion ?? DateTime.UtcNow,
-            Activo = true,
-            FechaCreacion = DateTime.UtcNow
-        };
+            _logger.LogInformation("Iniciando proceso de inscripción para AlumnoId: {AlumnoId} en GrupoId: {GrupoId}", request.AlumnoId, request.GrupoId);
 
-        _context.Inscripciones.Add(inscripcion);
-        await _context.SaveChangesAsync();
+            // 1. Validar que el alumno y el grupo existan y estén activos
+            var alumno = await _alumnoRepository.GetByIdAsync(request.AlumnoId);
+            if (alumno == null || !alumno.Activo)
+            {
+                throw new NotFoundException($"El alumno con ID {request.AlumnoId} no existe o no está activo.");
+            }
 
-        _logger.LogInformation("Inscripción creada exitosamente: AlumnoId={AlumnoId}, GrupoId={GrupoId}, InscripcionId={InscripcionId}",
-            request.AlumnoId, request.GrupoId, inscripcion.Id);
+            var grupo = await _grupoRepository.GetByIdAsync(request.GrupoId);
+            if (grupo == null || !grupo.Activo)
+            {
+                throw new NotFoundException($"El grupo con ID {request.GrupoId} no existe o no está activo.");
+            }
 
-        return _mapper.Map<InscripcionDto>(inscripcion);
-    }
+            // 2. Validar que el alumno no esté ya inscrito en el mismo grupo
+            var inscripciones = await _inscripcionRepository.GetAllAsync();
+            var yaInscrito = inscripciones.Any(i => i.AlumnoId == request.AlumnoId && i.GrupoId == request.GrupoId && i.Activo);
+            if (yaInscrito)
+            {
+                throw new ConflictException("El alumno ya está inscrito en este grupo.");
+            }
+            
+            // 3. Validar capacidad del grupo
+            var inscritosEnGrupo = inscripciones.Count(i => i.GrupoId == request.GrupoId && i.Activo);
+            if (inscritosEnGrupo >= grupo.CapacidadMaxima)
+            {
+                throw new ConflictException($"El grupo '{grupo.Nombre}' ha alcanzado su capacidad máxima de {grupo.CapacidadMaxima} alumnos.");
+            }
 
-    /// <summary>
-    /// Obtener inscripción por ID.
-    /// </summary>
-    public async Task<InscripcionDto> GetByIdAsync(int id)
-    {
-        var inscripcion = await _context.Inscripciones
-            .AsNoTracking()
-            .FirstOrDefaultAsync(i => i.Id == id && i.Activo);
+            // 4. Crear y guardar la inscripción
+            var inscripcion = _mapper.Map<Inscripcion>(request);
+            inscripcion.Activo = true;
+            inscripcion.FechaCreacion = DateTime.UtcNow;
 
-        if (inscripcion == null)
-            throw new NotFoundException("Inscripción", id);
+            var nuevaInscripcion = await _inscripcionRepository.AddAsync(inscripcion);
+            await _inscripcionRepository.SaveChangesAsync();
 
-        return _mapper.Map<InscripcionDto>(inscripcion);
-    }
+            _logger.LogInformation("Inscripción creada con éxito con ID: {InscripcionId}", nuevaInscripcion.Id);
+            
+            // 5. Devolver DTO con nombres
+            var inscripcionDto = _mapper.Map<InscripcionDto>(nuevaInscripcion);
+            inscripcionDto.AlumnoNombre = $"{alumno.Nombres} {alumno.ApellidoPaterno}";
+            inscripcionDto.GrupoNombre = grupo.Nombre;
 
-    /// <summary>
-    /// Obtener inscripción con datos completos (alumno, grupo, ciclo, etc.).
-    /// </summary>
-    public async Task<InscripcionFullDataDto> GetByIdFullAsync(int id)
-    {
-        var inscripcion = await _context.Inscripciones
-            .Include(i => i.Alumno)
-            .Include(i => i.Grupo)
-                .ThenInclude(g => g.GrupoMaterias)
-            .Include(i => i.CicloEscolar)
-            .Include(i => i.Asistencias)
-            .Include(i => i.Calificaciones)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(i => i.Id == id && i.Activo);
-
-        if (inscripcion == null)
-            throw new NotFoundException("Inscripción", id);
-
-        return _mapper.Map<InscripcionFullDataDto>(inscripcion);
-    }
-
-    /// <summary>
-    /// Obtener inscripciones con paginación y búsqueda.
-    /// </summary>
-    public async Task<PaginatedInscripcionesDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
-    {
-        // Validar paginación
-        if (pageNumber < 1) pageNumber = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-
-        var query = _context.Inscripciones.AsQueryable();
-
-        // Filtrar solo inscripciones ACTIVAS
-        query = query.Where(i => i.Activo);
-
-        // Filtrar por término de búsqueda
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            searchTerm = searchTerm.Trim().ToLower();
-            query = query.Include(i => i.Alumno)
-                .Include(i => i.Grupo)
-                .Where(i =>
-                    i.Alumno.Nombre.ToLower().Contains(searchTerm) ||
-                    i.Alumno.Apellido.ToLower().Contains(searchTerm) ||
-                    i.Alumno.Matricula!.ToLower().Contains(searchTerm) ||
-                    i.Grupo.Nombre.ToLower().Contains(searchTerm)
-                );
+            return inscripcionDto;
         }
 
-        // Contar total
-        var totalItems = await query.CountAsync();
-
-        // Paginar
-        var inscripciones = await query
-            .OrderBy(i => i.AlumnoId)
-            .ThenBy(i => i.GrupoId)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .AsNoTracking()
-            .ToListAsync();
-
-        return new PaginatedInscripcionesDto
+        public async Task DeleteAsync(int id)
         {
-            Items = inscripciones.Select(i => _mapper.Map<InscripcionDto>(i)).ToList(),
-            TotalItems = totalItems,
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
-    }
+            var inscripcion = await _inscripcionRepository.GetByIdAsync(id);
+            if (inscripcion == null)
+            {
+                throw new NotFoundException($"Inscripción con ID {id} no encontrada.");
+            }
 
-    /// <summary>
-    /// Obtener inscripciones de un alumno específico.
-    /// </summary>
-    public async Task<List<InscripcionDto>> GetByAlumnoAsync(int alumnoId)
-    {
-        // Verificar que el alumno existe
-        var alumnoExists = await _context.Alumnos.AnyAsync(a => a.Id == alumnoId);
-        if (!alumnoExists)
-            throw new NotFoundException("Alumno", alumnoId);
-
-        var inscripciones = await _context.Inscripciones
-            .Where(i => i.AlumnoId == alumnoId && i.Activo)
-            .OrderBy(i => i.FechaInscripcion)
-            .AsNoTracking()
-            .ToListAsync();
-
-        return inscripciones.Select(i => _mapper.Map<InscripcionDto>(i)).ToList();
-    }
-
-    /// <summary>
-    /// Obtener inscripciones de un grupo específico.
-    /// </summary>
-    public async Task<List<InscripcionDto>> GetByGrupoAsync(int grupoId)
-    {
-        // Verificar que el grupo existe
-        var grupoExists = await _context.Grupos.AnyAsync(g => g.Id == grupoId);
-        if (!grupoExists)
-            throw new NotFoundException("Grupo", grupoId);
-
-        var inscripciones = await _context.Inscripciones
-            .Where(i => i.GrupoId == grupoId && i.Activo)
-            .OrderBy(i => i.AlumnoId)
-            .AsNoTracking()
-            .ToListAsync();
-
-        return inscripciones.Select(i => _mapper.Map<InscripcionDto>(i)).ToList();
-    }
-
-    /// <summary>
-    /// Actualizar inscripción (cambiar grupo, fecha).
-    /// </summary>
-    public async Task<InscripcionDto> UpdateAsync(int id, UpdateInscripcionDto request)
-    {
-        _logger.LogInformation("Actualizando inscripción {InscripcionId}", id);
-
-        // Validar
-        var validationResult = await _updateValidator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-            throw new Core.Exceptions.ValidationException(errors);
+            // En lugar de borrado físico, se desactiva
+            inscripcion.Activo = false;
+            inscripcion.FechaActualizacion = DateTime.UtcNow;
+            await _inscripcionRepository.UpdateAsync(inscripcion);
+            await _inscripcionRepository.SaveChangesAsync();
+            _logger.LogInformation("Inscripción con ID {Id} ha sido desactivada.", id);
         }
 
-        // Obtener inscripción
-        var inscripcion = await _context.Inscripciones.FindAsync(id);
-        if (inscripcion == null || !inscripcion.Activo)
-            throw new NotFoundException("Inscripción", id);
-
-        // Si cambia el grupo, validar el nuevo grupo
-        if (request.GrupoId.HasValue && request.GrupoId != inscripcion.GrupoId)
+        public async Task<List<InscripcionDto>> GetAllAsync()
         {
-            var nuevoGrupo = await _context.Grupos.FindAsync(request.GrupoId);
-            if (nuevoGrupo == null || !nuevoGrupo.Activo)
-                throw new NotFoundException("Grupo", request.GrupoId.Value);
-
-            // Verificar que el nuevo grupo está en el mismo ciclo
-            if (nuevoGrupo.CicloEscolarId != inscripcion.CicloEscolarId)
-                throw new BusinessException("El nuevo grupo no pertenece al mismo ciclo escolar.");
-
-            // Verificar que no existe una inscripción activa en el nuevo grupo
-            var inscripcionEnNuevoGrupo = await _context.Inscripciones
-                .FirstOrDefaultAsync(i => i.AlumnoId == inscripcion.AlumnoId 
-                    && i.GrupoId == request.GrupoId 
-                    && i.CicloEscolarId == inscripcion.CicloEscolarId
-                    && i.Activo);
-
-            if (inscripcionEnNuevoGrupo != null)
-                throw new BusinessException($"El alumno ya está inscrito en el grupo {nuevoGrupo.Nombre}.");
-
-            inscripcion.GrupoId = request.GrupoId.Value;
+            var inscripciones = await _inscripcionRepository.GetAllIncludingAsync(i => i.Alumno, i => i.Grupo);
+            return _mapper.Map<List<InscripcionDto>>(inscripciones.Where(i => i.Activo));
+        }
+        
+        public async Task<List<InscripcionDto>> GetByAlumnoIdAsync(int alumnoId)
+        {
+            var inscripciones = await _inscripcionRepository.GetFilteredIncludingAsync(i => i.AlumnoId == alumnoId && i.Activo, i => i.Grupo);
+            if (!inscripciones.Any())
+            {
+                 _logger.LogWarning("No se encontraron inscripciones para el alumno con ID: {AlumnoId}", alumnoId);
+            }
+            return _mapper.Map<List<InscripcionDto>>(inscripciones);
         }
 
-        // Actualizar fecha si se proporciona
-        if (request.FechaInscripcion.HasValue)
-            inscripcion.FechaInscripcion = request.FechaInscripcion.Value;
+        public async Task<List<InscripcionDto>> GetByGrupoIdAsync(int grupoId)
+        {
+            var inscripciones = await _inscripcionRepository.GetFilteredIncludingAsync(i => i.GrupoId == grupoId && i.Activo, i => i.Alumno);
+            if (!inscripciones.Any())
+            {
+                _logger.LogWarning("No se encontraron inscripciones para el grupo con ID: {GrupoId}", grupoId);
+            }
+            return _mapper.Map<List<InscripcionDto>>(inscripciones);
+        }
 
-        _context.Inscripciones.Update(inscripcion);
-        await _context.SaveChangesAsync();
+        public async Task<InscripcionDto> GetByIdAsync(int id)
+        {
+            var inscripcion = (await _inscripcionRepository.GetFilteredIncludingAsync(i => i.Id == id, i => i.Alumno, i => i.Grupo)).FirstOrDefault();
 
-        _logger.LogInformation("Inscripción actualizada: {InscripcionId}", id);
-
-        return _mapper.Map<InscripcionDto>(inscripcion);
-    }
-
-    /// <summary>
-    /// Desactivar inscripción (soft delete).
-    /// </summary>
-    public async Task<bool> SoftDeleteAsync(int id)
-    {
-        var inscripcion = await _context.Inscripciones.FindAsync(id);
-        if (inscripcion == null)
-            throw new NotFoundException("Inscripción", id);
-
-        if (!inscripcion.Activo)
-            throw new BusinessException("La inscripción ya está desactivada.");
-
-        inscripcion.Activo = false;
-        _context.Inscripciones.Update(inscripcion);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Inscripción desactivada: {InscripcionId}", id);
-        return true;
-    }
-
-    /// <summary>
-    /// Reactivar inscripción desactivada.
-    /// </summary>
-    public async Task<bool> RestoreAsync(int id)
-    {
-        var inscripcion = await _context.Inscripciones.FindAsync(id);
-        if (inscripcion == null)
-            throw new NotFoundException("Inscripción", id);
-
-        if (inscripcion.Activo)
-            throw new BusinessException("La inscripción ya está activa.");
-
-        inscripcion.Activo = true;
-        _context.Inscripciones.Update(inscripcion);
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Inscripción reactivada: {InscripcionId}", id);
-        return true;
-    }
-
-    /// <summary>
-    /// Verificar si una inscripción existe.
-    /// </summary>
-    public async Task<bool> ExistsAsync(int id)
-    {
-        return await _context.Inscripciones
-            .AnyAsync(i => i.Id == id && i.Activo);
+            if (inscripcion == null || !inscripcion.Activo)
+            {
+                throw new NotFoundException($"Inscripción con ID {id} no encontrada o no está activa.");
+            }
+            
+            return _mapper.Map<InscripcionDto>(inscripcion);
+        }
     }
 }

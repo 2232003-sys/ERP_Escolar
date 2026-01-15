@@ -1,212 +1,164 @@
+
+using ERPEscolar.DTOs.ControlEscolar;
+using ERPEscolar.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Threading.Tasks;
 using ERPEscolar.API.Core.Exceptions;
-using ERPEscolar.API.Infrastructure.Services;
-using ERPEscolar.API.DTOs.ControlEscolar;
-using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 
-namespace ERPEscolar.API.Features.ControlEscolar;
-
-/// <summary>
-/// Controller para gestión de grupos.
-/// </summary>
-[ApiController]
-[Route("api/[controller]")]
-[Authorize]
-public class GruposController : ControllerBase
+namespace ERPEscolar.Features.ControlEscolar
 {
-    private readonly IGrupoService _grupoService;
-    private readonly ILogger<GruposController> _logger;
-
-    public GruposController(IGrupoService grupoService, ILogger<GruposController> logger)
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class GruposController : ControllerBase
     {
-        _grupoService = grupoService;
-        _logger = logger;
-    }
+        private readonly IGrupoService _grupoService;
+        private readonly ILogger<GruposController> _logger;
 
-    /// <summary>
-    /// Obtener listado de grupos con paginación y búsqueda.
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
-    {
-        try
+        public GruposController(IGrupoService grupoService, ILogger<GruposController> logger)
         {
-            var result = await _grupoService.GetAllAsync(pageNumber, pageSize, searchTerm);
-            return Ok(result);
+            _grupoService = grupoService;
+            _logger = logger;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al obtener grupos");
-            return StatusCode(500, new { message = "Error al obtener grupos." });
-        }
-    }
 
-    /// <summary>
-    /// Obtener grupo por ID.
-    /// </summary>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        try
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            var grupo = await _grupoService.GetByIdAsync(id);
-            return Ok(grupo);
+            try
+            {
+                var grupos = await _grupoService.GetAllAsync();
+                return Ok(grupos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener todos los grupos.");
+                return StatusCode(500, "Ocurrió un error interno al procesar la solicitud.");
+            }
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al obtener grupo {id}");
-            return StatusCode(500, new { message = "Error al obtener grupo." });
-        }
-    }
 
-    /// <summary>
-    /// Obtener grupo con datos completos (ciclo escolar, docente tutor, inscripciones).
-    /// </summary>
-    [HttpGet("{id}/completo")]
-    public async Task<IActionResult> GetByIdFull(int id)
-    {
-        try
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var grupo = await _grupoService.GetByIdFullAsync(id);
-            return Ok(grupo);
+            try
+            {
+                var grupo = await _grupoService.GetByIdAsync(id);
+                return Ok(grupo);
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el grupo con ID {Id}", id);
+                return StatusCode(500, "Ocurrió un error interno.");
+            }
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al obtener grupo completo {id}");
-            return StatusCode(500, new { message = "Error al obtener grupo." });
-        }
-    }
 
-    /// <summary>
-    /// Crear un nuevo grupo.
-    /// </summary>
-    [HttpPost]
-    [Authorize(Roles = "SuperAdmin,Admin TI,Control Escolar")]
-    public async Task<IActionResult> Create([FromBody] CreateGrupoDto request)
-    {
-        try
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin,Admin,ControlEscolar")]
+        public async Task<IActionResult> Create([FromBody] CreateGrupoDto request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
-            var grupo = await _grupoService.CreateGrupoAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = grupo.Id }, grupo);
+            try
+            {
+                var grupoDto = await _grupoService.CreateGrupoAsync(request);
+                return CreatedAtAction(nameof(GetById), new { id = grupoDto.Id }, grupoDto);
+            }
+            catch (ConflictException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return Conflict(new { message = ex.Message });
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear el grupo.");
+                return StatusCode(500, "Ocurrió un error interno.");
+            }
         }
-        catch (Core.Exceptions.ValidationException ex)
-        {
-            return BadRequest(new { message = "Validación fallida", errors = ex.Errors });
-        }
-        catch (BusinessException ex)
-        {
-            _logger.LogWarning(ex, "Error de negocio al crear grupo");
-            return Conflict(new { message = ex.Message });
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error al crear grupo");
-            return StatusCode(500, new { message = "Error al crear grupo." });
-        }
-    }
 
-    /// <summary>
-    /// Actualizar datos de grupo.
-    /// </summary>
-    [HttpPut("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin TI,Control Escolar")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateGrupoDto request)
-    {
-        try
+        [HttpPut("{id}")]
+        [Authorize(Roles = "SuperAdmin,Admin,ControlEscolar")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateGrupoDto request)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
-            var grupo = await _grupoService.UpdateGrupoAsync(id, request);
-            return Ok(grupo);
+            try
+            {
+                var grupoDto = await _grupoService.UpdateGrupoAsync(id, request);
+                return Ok(grupoDto);
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el grupo con ID {Id}", id);
+                return StatusCode(500, "Ocurrió un error interno.");
+            }
         }
-        catch (Core.Exceptions.ValidationException ex)
-        {
-            return BadRequest(new { message = "Validación fallida", errors = ex.Errors });
-        }
-        catch (BusinessException ex)
-        {
-            _logger.LogWarning(ex, "Error de negocio al actualizar grupo");
-            return Conflict(new { message = ex.Message });
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al actualizar grupo {id}");
-            return StatusCode(500, new { message = "Error al actualizar grupo." });
-        }
-    }
 
-    /// <summary>
-    /// Desactivar grupo (soft delete).
-    /// </summary>
-    [HttpDelete("{id}")]
-    [Authorize(Roles = "SuperAdmin,Admin TI,Control Escolar")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        try
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "SuperAdmin,Admin,ControlEscolar")]
+        public async Task<IActionResult> Delete(int id)
         {
-            await _grupoService.SoftDeleteAsync(id);
-            return NoContent();
+            try
+            {
+                await _grupoService.SoftDeleteAsync(id);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                 _logger.LogError(ex, "Error al desactivar el grupo con ID {Id}", id);
+                return StatusCode(500, "Ocurrió un error interno.");
+            }
         }
-        catch (NotFoundException ex)
+        
+        [HttpPatch("{id}/restore")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> Restore(int id)
         {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (BusinessException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al desactivar grupo {id}");
-            return StatusCode(500, new { message = "Error al desactivar grupo." });
-        }
-    }
-
-    /// <summary>
-    /// Restaurar grupo desactivado.
-    /// </summary>
-    [HttpPatch("{id}/restore")]
-    [Authorize(Roles = "SuperAdmin,Admin TI,Control Escolar")]
-    public async Task<IActionResult> Restore(int id)
-    {
-        try
-        {
-            await _grupoService.RestoreAsync(id);
-            return NoContent();
-        }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (BusinessException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al restaurar grupo {id}");
-            return StatusCode(500, new { message = "Error al restaurar grupo." });
+            try
+            {
+                await _grupoService.RestoreAsync(id);
+                return Ok(new { message = "Grupo reactivado correctamente." });
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ConflictException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al reactivar el grupo con ID {Id}", id);
+                return StatusCode(500, "Ocurrió un error interno.");
+            }
         }
     }
 }

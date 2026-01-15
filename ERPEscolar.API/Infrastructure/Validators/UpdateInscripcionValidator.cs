@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace ERPEscolar.API.Infrastructure.Validators
 {
-    public class CreateInscripcionValidator : AbstractValidator<CreateInscripcionDto>
+    public class UpdateInscripcionValidator : AbstractValidator<UpdateInscripcionDto>
     {
-        public CreateInscripcionValidator()
+        public UpdateInscripcionValidator()
         {
             RuleFor(i => i.AlumnoId).NotEmpty().WithMessage("El ID del alumno es obligatorio.");
             RuleFor(i => i.GrupoId).NotEmpty().WithMessage("El ID del grupo es obligatorio.");
