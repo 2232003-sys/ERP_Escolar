@@ -97,6 +97,7 @@ builder.Services.AddScoped<ICalificacionService, CalificacionService>();
 builder.Services.AddScoped<IColegiaturaService, ColegiaturaService>();
 builder.Services.AddScoped<ICFDIService, CFDIService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
+builder.Services.AddScoped<IEstadoCuentaService, EstadoCuentaService>();
 
 // API controllers
 builder.Services.AddControllers();
