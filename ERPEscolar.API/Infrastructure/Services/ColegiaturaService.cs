@@ -8,34 +8,34 @@ using FluentValidation;
 namespace ERPEscolar.API.Infrastructure.Services;
 
 /// <summary>
-/// Servicio de gestión de cargos con validaciones de negocio.
+/// Servicio de gestión de colegiaturas con validaciones de negocio.
 /// </summary>
-public interface ICargoService
+public interface IColegiaturaService
 {
-    Task<CargoDto> CreateCargoAsync(CreateCargoDto request);
-    Task<CargoDto> GetByIdAsync(int id);
-    Task<CargoFullDataDto> GetByIdFullAsync(int id);
-    Task<PaginatedCargosDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null);
-    Task<CargoDto> UpdateCargoAsync(int id, UpdateCargoDto request);
+    Task<ColegiaturaDto> CreateColegiaturaAsync(CreateColegiaturaDto request);
+    Task<ColegiaturaDto> GetByIdAsync(int id);
+    Task<ColegiaturaFullDataDto> GetByIdFullAsync(int id);
+    Task<PaginatedColegiaturasDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null);
+    Task<ColegiaturaDto> UpdateColegiaturaAsync(int id, UpdateColegiaturaDto request);
     Task<bool> SoftDeleteAsync(int id);
     Task<bool> RestoreAsync(int id);
     Task<bool> ExistsAsync(int id);
-    Task<List<CargoDto>> GetCargosByAlumnoAsync(int alumnoId);
-    Task<List<CargoDto>> GetCargosPendientesAsync(int alumnoId);
+    Task<List<ColegiaturaDto>> GetColegiaturasByAlumnoAsync(int alumnoId);
+    Task<List<ColegiaturaDto>> GetColegiaturasPendientesAsync(int alumnoId);
 }
 
-public class CargoService : ICargoService
+public class ColegiaturaService : IColegiaturaService
 {
     private readonly AppDbContext _context;
-    private readonly ILogger<CargoService> _logger;
-    private readonly IValidator<CreateCargoDto> _createValidator;
-    private readonly IValidator<UpdateCargoDto> _updateValidator;
+    private readonly ILogger<ColegiaturaService> _logger;
+    private readonly IValidator<CreateColegiaturaDto> _createValidator;
+    private readonly IValidator<UpdateColegiaturaDto> _updateValidator;
 
-    public CargoService(
+    public ColegiaturaService(
         AppDbContext context,
-        ILogger<CargoService> logger,
-        IValidator<CreateCargoDto> createValidator,
-        IValidator<UpdateCargoDto> updateValidator)
+        ILogger<ColegiaturaService> logger,
+        IValidator<CreateColegiaturaDto> createValidator,
+        IValidator<UpdateColegiaturaDto> updateValidator)
     {
         _context = context;
         _logger = logger;
@@ -44,9 +44,9 @@ public class CargoService : ICargoService
     }
 
     /// <summary>
-    /// Crear un nuevo cargo con validaciones.
+    /// Crear una nueva colegiatura con validaciones.
     /// </summary>
-    public async Task<CargoDto> CreateCargoAsync(CreateCargoDto request)
+    public async Task<ColegiaturaDto> CreateColegiaturaAsync(CreateColegiaturaDto request)
     {
         try
         {
@@ -78,15 +78,15 @@ public class CargoService : ICargoService
             if (cicloEscolar == null)
                 throw new NotFoundException("CicloEscolar", request.CicloEscolarId);
 
-            // Verificar que no exista un cargo duplicado para el mismo alumno, concepto, ciclo y mes
-            var cargoExists = await _context.Cargos
+            // Verificar que no exista una colegiatura duplicada para el mismo alumno, concepto, ciclo y mes
+            var colegiaturaExists = await _context.Cargos
                 .AnyAsync(c => c.AlumnoId == request.AlumnoId &&
                               c.ConceptoCobroId == request.ConceptoCobroId &&
                               c.CicloEscolarId == request.CicloEscolarId &&
                               c.Mes == request.Mes &&
                               c.Activo);
-            if (cargoExists)
-                throw new BusinessException($"Ya existe un cargo activo para el alumno, concepto, ciclo y mes especificados.");
+            if (colegiaturaExists)
+                throw new BusinessException($"Ya existe una colegiatura activa para el alumno, concepto, ciclo y mes especificados.");
 
             // Generar folio único
             var folio = await GenerateFolioAsync();
@@ -95,8 +95,8 @@ public class CargoService : ICargoService
             var subtotal = request.Monto - request.Descuento + request.Recargo;
             var total = subtotal * (1 + request.IVA);
 
-            // Crear cargo
-            var cargo = new Cargo
+            // Crear colegiatura
+            var colegiatura = new Cargo
             {
                 AlumnoId = request.AlumnoId,
                 ConceptoCobroId = request.ConceptoCobroId,
@@ -116,41 +116,41 @@ public class CargoService : ICargoService
                 FechaCreacion = DateTime.UtcNow
             };
 
-            _context.Cargos.Add(cargo);
+            _context.Cargos.Add(colegiatura);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Cargo creado: ID={cargo.Id}, Folio={cargo.Folio}, Total={cargo.Total:C}");
+            _logger.LogInformation($"Colegiatura creada: ID={colegiatura.Id}, Folio={colegiatura.Folio}, Total={colegiatura.Total:C}");
 
-            return MapToDto(cargo);
+            return MapToDto(colegiatura);
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error de BD al crear cargo");
-            throw new BusinessException("Error al guardar el cargo. Verifique los datos e intente nuevamente.");
+            _logger.LogError(ex, "Error de BD al crear colegiatura");
+            throw new BusinessException("Error al guardar la colegiatura. Verifique los datos e intente nuevamente.");
         }
     }
 
     /// <summary>
-    /// Obtener cargo por ID.
+    /// Obtener colegiatura por ID.
     /// </summary>
-    public async Task<CargoDto> GetByIdAsync(int id)
+    public async Task<ColegiaturaDto> GetByIdAsync(int id)
     {
-        var cargo = await _context.Cargos
+        var colegiatura = await _context.Cargos
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.Activo);
 
-        if (cargo == null)
-            throw new NotFoundException("Cargo", id);
+        if (colegiatura == null)
+            throw new NotFoundException("Colegiatura", id);
 
-        return MapToDto(cargo);
+        return MapToDto(colegiatura);
     }
 
     /// <summary>
-    /// Obtener cargo con datos completos (relaciones incluidas).
+    /// Obtener colegiatura con datos completos (relaciones incluidas).
     /// </summary>
-    public async Task<CargoFullDataDto> GetByIdFullAsync(int id)
+    public async Task<ColegiaturaFullDataDto> GetByIdFullAsync(int id)
     {
-        var cargo = await _context.Cargos
+        var colegiatura = await _context.Cargos
             .Include(c => c.Alumno)
             .Include(c => c.ConceptoCobro)
             .Include(c => c.CicloEscolar)
@@ -158,16 +158,16 @@ public class CargoService : ICargoService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.Activo);
 
-        if (cargo == null)
-            throw new NotFoundException("Cargo", id);
+        if (colegiatura == null)
+            throw new NotFoundException("Colegiatura", id);
 
-        return MapToFullDto(cargo);
+        return MapToFullDto(colegiatura);
     }
 
     /// <summary>
-    /// Obtener todos los cargos con paginación y búsqueda.
+    /// Obtener todas las colegiaturas con paginación y búsqueda.
     /// </summary>
-    public async Task<PaginatedCargosDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
+    public async Task<PaginatedColegiaturasDto> GetAllAsync(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
     {
         var query = _context.Cargos
             .Include(c => c.Alumno)
@@ -189,16 +189,16 @@ public class CargoService : ICargoService
 
         var totalRecords = await query.CountAsync();
 
-        var cargos = await query
+        var colegiaturas = await query
             .OrderByDescending(c => c.FechaEmision)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
             .ToListAsync();
 
-        return new PaginatedCargosDto
+        return new PaginatedColegiaturasDto
         {
-            Items = cargos.Select(MapToDto).ToList(),
+            Items = colegiaturas.Select(MapToDto).ToList(),
             PageNumber = pageNumber,
             PageSize = pageSize,
             TotalRecords = totalRecords
@@ -206,9 +206,9 @@ public class CargoService : ICargoService
     }
 
     /// <summary>
-    /// Actualizar un cargo.
+    /// Actualizar una colegiatura.
     /// </summary>
-    public async Task<CargoDto> UpdateCargoAsync(int id, UpdateCargoDto request)
+    public async Task<ColegiaturaDto> UpdateColegiaturaAsync(int id, UpdateColegiaturaDto request)
     {
         try
         {
@@ -222,87 +222,87 @@ public class CargoService : ICargoService
                 throw new Core.Exceptions.ValidationException(errors);
             }
 
-            var cargo = await _context.Cargos.FindAsync(id);
-            if (cargo == null || !cargo.Activo)
-                throw new NotFoundException("Cargo", id);
+            var colegiatura = await _context.Cargos.FindAsync(id);
+            if (colegiatura == null || !colegiatura.Activo)
+                throw new NotFoundException("Colegiatura", id);
 
             // Validaciones de negocio para actualización
-            if (request.Estado == "Pagado" && cargo.MontoRecibido < cargo.Total)
-                throw new BusinessException("No se puede marcar como pagado un cargo con monto recibido insuficiente.");
+            if (request.Estado == "Pagado" && colegiatura.MontoRecibido < colegiatura.Total)
+                throw new BusinessException("No se puede marcar como pagado una colegiatura con monto recibido insuficiente.");
 
-            if (request.Estado == "Cancelado" && cargo.MontoRecibido > 0)
-                throw new BusinessException("No se puede cancelar un cargo que ya tiene pagos aplicados.");
+            if (request.Estado == "Cancelado" && colegiatura.MontoRecibido > 0)
+                throw new BusinessException("No se puede cancelar una colegiatura que ya tiene pagos aplicados.");
 
             // Actualizar campos
-            cargo.Estado = request.Estado;
-            cargo.MontoRecibido = request.MontoRecibido;
-            cargo.Observacion = request.Observacion?.Trim();
+            colegiatura.Estado = request.Estado;
+            colegiatura.MontoRecibido = request.MontoRecibido;
+            colegiatura.Observacion = request.Observacion?.Trim();
 
             // Si se marca como pagado y no tiene fecha de pago, asignar fecha actual
-            if (request.Estado == "Pagado" && !cargo.FechaPago.HasValue)
-                cargo.FechaPago = DateTime.UtcNow;
+            if (request.Estado == "Pagado" && !colegiatura.FechaPago.HasValue)
+                colegiatura.FechaPago = DateTime.UtcNow;
             else if (request.Estado != "Pagado")
-                cargo.FechaPago = request.FechaPago;
+                colegiatura.FechaPago = request.FechaPago;
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Cargo actualizado: ID={cargo.Id}, Estado={cargo.Estado}");
+            _logger.LogInformation($"Colegiatura actualizada: ID={colegiatura.Id}, Estado={colegiatura.Estado}");
 
-            return MapToDto(cargo);
+            return MapToDto(colegiatura);
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error de BD al actualizar cargo");
-            throw new BusinessException("Error al actualizar el cargo. Verifique los datos e intente nuevamente.");
+            _logger.LogError(ex, "Error de BD al actualizar colegiatura");
+            throw new BusinessException("Error al actualizar la colegiatura. Verifique los datos e intente nuevamente.");
         }
     }
 
     /// <summary>
-    /// Soft delete de cargo.
+    /// Soft delete de colegiatura.
     /// </summary>
     public async Task<bool> SoftDeleteAsync(int id)
     {
-        var cargo = await _context.Cargos.FindAsync(id);
-        if (cargo == null)
-            throw new NotFoundException("Cargo", id);
+        var colegiatura = await _context.Cargos.FindAsync(id);
+        if (colegiatura == null)
+            throw new NotFoundException("Colegiatura", id);
 
-        if (!cargo.Activo)
-            throw new BusinessException("El cargo ya está eliminado.");
+        if (!colegiatura.Activo)
+            throw new BusinessException("La colegiatura ya está eliminada.");
 
         // Verificar que no tenga pagos aplicados
         var hasPagos = await _context.Pagos
             .AnyAsync(p => p.CargoId == id && p.Activo);
         if (hasPagos)
-            throw new BusinessException("No se puede eliminar un cargo que tiene pagos aplicados.");
+            throw new BusinessException("No se puede eliminar una colegiatura que tiene pagos aplicados.");
 
-        cargo.Activo = false;
+        colegiatura.Activo = false;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation($"Cargo eliminado: ID={id}");
+        _logger.LogInformation($"Colegiatura eliminada: ID={id}");
         return true;
     }
 
     /// <summary>
-    /// Restaurar cargo eliminado.
+    /// Restaurar colegiatura eliminada.
     /// </summary>
     public async Task<bool> RestoreAsync(int id)
     {
-        var cargo = await _context.Cargos.FindAsync(id);
-        if (cargo == null)
-            throw new NotFoundException("Cargo", id);
+        var colegiatura = await _context.Cargos.FindAsync(id);
+        if (colegiatura == null)
+            throw new NotFoundException("Colegiatura", id);
 
-        if (cargo.Activo)
-            throw new BusinessException("El cargo ya está activo.");
+        if (colegiatura.Activo)
+            throw new BusinessException("La colegiatura ya está activa.");
 
-        cargo.Activo = true;
+        colegiatura.Activo = true;
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation($"Cargo restaurado: ID={id}");
+        _logger.LogInformation($"Colegiatura restaurada: ID={id}");
         return true;
     }
 
     /// <summary>
-    /// Verificar si existe un cargo.
+    /// Verificar si existe una colegiatura.
     /// </summary>
     public async Task<bool> ExistsAsync(int id)
     {
@@ -310,16 +310,16 @@ public class CargoService : ICargoService
     }
 
     /// <summary>
-    /// Obtener cargos de un alumno específico.
+    /// Obtener colegiaturas de un alumno específico.
     /// </summary>
-    public async Task<List<CargoDto>> GetCargosByAlumnoAsync(int alumnoId)
+    public async Task<List<ColegiaturaDto>> GetColegiaturasByAlumnoAsync(int alumnoId)
     {
         // Verificar que el alumno existe
         var alumnoExists = await _context.Alumnos.AnyAsync(a => a.Id == alumnoId && a.Activo);
         if (!alumnoExists)
             throw new NotFoundException("Alumno", alumnoId);
 
-        var cargos = await _context.Cargos
+        var colegiaturas = await _context.Cargos
             .Include(c => c.ConceptoCobro)
             .Include(c => c.CicloEscolar)
             .Where(c => c.AlumnoId == alumnoId && c.Activo)
@@ -327,20 +327,20 @@ public class CargoService : ICargoService
             .AsNoTracking()
             .ToListAsync();
 
-        return cargos.Select(MapToDto).ToList();
+        return colegiaturas.Select(MapToDto).ToList();
     }
 
     /// <summary>
-    /// Obtener cargos pendientes de un alumno.
+    /// Obtener colegiaturas pendientes de un alumno.
     /// </summary>
-    public async Task<List<CargoDto>> GetCargosPendientesAsync(int alumnoId)
+    public async Task<List<ColegiaturaDto>> GetColegiaturasPendientesAsync(int alumnoId)
     {
         // Verificar que el alumno existe
         var alumnoExists = await _context.Alumnos.AnyAsync(a => a.Id == alumnoId && a.Activo);
         if (!alumnoExists)
             throw new NotFoundException("Alumno", alumnoId);
 
-        var cargos = await _context.Cargos
+        var colegiaturas = await _context.Cargos
             .Include(c => c.ConceptoCobro)
             .Include(c => c.CicloEscolar)
             .Where(c => c.AlumnoId == alumnoId && c.Activo &&
@@ -349,16 +349,16 @@ public class CargoService : ICargoService
             .AsNoTracking()
             .ToListAsync();
 
-        return cargos.Select(MapToDto).ToList();
+        return colegiaturas.Select(MapToDto).ToList();
     }
 
     /// <summary>
-    /// Generar folio único para cargo.
+    /// Generar folio único para colegiatura.
     /// </summary>
     private async Task<string> GenerateFolioAsync()
     {
         var date = DateTime.UtcNow;
-        var baseFolio = $"CARGO-{date:yyyyMMdd}";
+        var baseFolio = $"COLEGIATURA-{date:yyyyMMdd}";
         var counter = 1;
         var folio = $"{baseFolio}-{counter:D4}";
 
@@ -374,74 +374,74 @@ public class CargoService : ICargoService
     /// <summary>
     /// Mapear entidad Cargo a DTO básico.
     /// </summary>
-    private static CargoDto MapToDto(Cargo cargo)
+    private static ColegiaturaDto MapToDto(Cargo colegiatura)
     {
-        return new CargoDto
+        return new ColegiaturaDto
         {
-            Id = cargo.Id,
-            AlumnoId = cargo.AlumnoId,
-            ConceptoCobroId = cargo.ConceptoCobroId,
-            CicloEscolarId = cargo.CicloEscolarId,
-            Folio = cargo.Folio,
-            Mes = cargo.Mes,
-            Monto = cargo.Monto,
-            Descuento = cargo.Descuento,
-            Recargo = cargo.Recargo,
-            Subtotal = cargo.Subtotal,
-            IVA = cargo.IVA,
-            Total = cargo.Total,
-            Estado = cargo.Estado,
-            MontoRecibido = cargo.MontoRecibido,
-            FechaEmision = cargo.FechaEmision,
-            FechaVencimiento = cargo.FechaVencimiento,
-            FechaPago = cargo.FechaPago,
-            Observacion = cargo.Observacion
+            Id = colegiatura.Id,
+            AlumnoId = colegiatura.AlumnoId,
+            ConceptoCobroId = colegiatura.ConceptoCobroId,
+            CicloEscolarId = colegiatura.CicloEscolarId,
+            Folio = colegiatura.Folio,
+            Mes = colegiatura.Mes,
+            Monto = colegiatura.Monto,
+            Descuento = colegiatura.Descuento,
+            Recargo = colegiatura.Recargo,
+            Subtotal = colegiatura.Subtotal,
+            IVA = colegiatura.IVA,
+            Total = colegiatura.Total,
+            Estado = colegiatura.Estado,
+            MontoRecibido = colegiatura.MontoRecibido,
+            FechaEmision = colegiatura.FechaEmision,
+            FechaVencimiento = colegiatura.FechaVencimiento,
+            FechaPago = colegiatura.FechaPago,
+            Observacion = colegiatura.Observacion
         };
     }
 
     /// <summary>
     /// Mapear entidad Cargo a DTO completo.
     /// </summary>
-    private static CargoFullDataDto MapToFullDto(Cargo cargo)
+    private static ColegiaturaFullDataDto MapToFullDto(Cargo colegiatura)
     {
-        return new CargoFullDataDto
+        return new ColegiaturaFullDataDto
         {
-            Id = cargo.Id,
-            Alumno = cargo.Alumno != null ? new AlumnoDto
+            Id = colegiatura.Id,
+            Alumno = colegiatura.Alumno != null ? new AlumnoDto
             {
-                Id = cargo.Alumno.Id,
-                NombreCompleto = $"{cargo.Alumno.Nombre} {cargo.Alumno.Apellido}".Trim(),
-                Matricula = cargo.Alumno.Matricula,
-                CURP = cargo.Alumno.CURP
+                Id = colegiatura.Alumno.Id,
+                NombreCompleto = $"{colegiatura.Alumno.Nombre} {colegiatura.Alumno.Apellido}".Trim(),
+                Matricula = colegiatura.Alumno.Matricula,
+                CURP = colegiatura.Alumno.CURP
             } : null,
-            ConceptoCobro = cargo.ConceptoCobro != null ? new ConceptoCobroDto
+            ConceptoCobro = colegiatura.ConceptoCobro != null ? new ConceptoCobroDto
             {
-                Id = cargo.ConceptoCobro.Id,
-                Nombre = cargo.ConceptoCobro.Nombre,
-                Descripcion = cargo.ConceptoCobro.Descripcion,
-                TipoConcepto = cargo.ConceptoCobro.TipoConcepto,
-                MontoBase = cargo.ConceptoCobro.MontoBase
+                Id = colegiatura.ConceptoCobro.Id,
+                Nombre = colegiatura.ConceptoCobro.Nombre,
+                Descripcion = colegiatura.ConceptoCobro.Descripcion,
+                TipoConcepto = colegiatura.ConceptoCobro.TipoConcepto,
+                MontoBase = colegiatura.ConceptoCobro.MontoBase
             } : null,
-            CicloEscolar = cargo.CicloEscolar != null ? new CicloEscolarDto
+            CicloEscolar = colegiatura.CicloEscolar != null ? new CicloEscolarDto
             {
-                Id = cargo.CicloEscolar.Id,
-                Nombre = cargo.CicloEscolar.Nombre
+                Id = colegiatura.CicloEscolar.Id,
+                Nombre = colegiatura.CicloEscolar.Nombre
             } : null,
-            Folio = cargo.Folio,
-            Mes = cargo.Mes,
-            Monto = cargo.Monto,
-            Descuento = cargo.Descuento,
-            Recargo = cargo.Recargo,
-            Subtotal = cargo.Subtotal,
-            IVA = cargo.IVA,
-            Total = cargo.Total,
-            Estado = cargo.Estado,
-            MontoRecibido = cargo.MontoRecibido,
-            FechaEmision = cargo.FechaEmision,
-            FechaVencimiento = cargo.FechaVencimiento,
-            FechaPago = cargo.FechaPago,
-            Observacion = cargo.Observacion,
-            Pagos = cargo.Pagos?.Select(p => new PagoDto
+            Folio = colegiatura.Folio,
+            Mes = colegiatura.Mes,
+            Monto = colegiatura.Monto,
+            Descuento = colegiatura.Descuento,
+            Recargo = colegiatura.Recargo,
+            Subtotal = colegiatura.Subtotal,
+            IVA = colegiatura.IVA,
+            Total = colegiatura.Total,
+            Estado = colegiatura.Estado,
+            MontoRecibido = colegiatura.MontoRecibido,
+            FechaEmision = colegiatura.FechaEmision,
+            FechaVencimiento = colegiatura.FechaVencimiento,
+            FechaPago = colegiatura.FechaPago,
+            Observacion = colegiatura.Observacion,
+            Pagos = colegiatura.Pagos?.Select(p => new PagoDto
             {
                 Id = p.Id,
                 Monto = p.Monto,

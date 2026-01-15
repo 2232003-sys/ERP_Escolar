@@ -45,7 +45,7 @@ public class CFDIProfile : Profile
 
         // CFDI -> CFDIFullDataDto (lectura con relaciones)
         CreateMap<CFDI, CFDIFullDataDto>()
-            .ForMember(dest => dest.Cargo, opt => opt.MapFrom(src => src.Cargo))
+            .ForMember(dest => dest.Colegiatura, opt => opt.MapFrom(src => src.Cargo))
             .ForMember(dest => dest.Bitacoras, opt => opt.MapFrom(src => src.Bitacoras.OrderByDescending(b => b.Timestamp)))
             .ForMember(dest => dest.FechaTimbrado, opt => opt.MapFrom(src => src.FechaTimbrado))
             .ForMember(dest => dest.FechaCancelacion, opt => opt.MapFrom(src => src.FechaCancelacion));
@@ -79,7 +79,7 @@ public class CFDIProfile : Profile
                 src.Estado == "Cancelada" && !src.FechaCancelacion.HasValue ? DateTime.UtcNow : src.FechaCancelacion));
 
         // Mapeos para entidades relacionadas
-        CreateMap<Cargo, CargoDto>();
+        CreateMap<Cargo, ColegiaturaDto>();
 
         CreateMap<BitacoraFiscal, BitacoraFiscalDto>();
 

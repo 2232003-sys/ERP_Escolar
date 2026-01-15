@@ -21,10 +21,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configurar JWT
+// Configurar JWT con clave por defecto
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["SecretKey"];
-var key = Encoding.ASCII.GetBytes(secretKey ?? "");
+var secretKey = jwtSettings["SecretKey"] ?? "MiClaveSecretaSuperSeguraDeAlMenos32CaracteresParaJWT";
+var key = Encoding.ASCII.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -38,9 +38,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"],
+        ValidIssuer = jwtSettings["Issuer"] ?? "ERP_Escolar_API",
         ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"],
+        ValidAudience = jwtSettings["Audience"] ?? "ERP_Escolar_Client",
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
@@ -49,7 +49,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Registrar AutoMapper - incluir todos los profiles
-builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CargoProfile), typeof(CFDIProfile));
+builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CalificacionProfile), typeof(ColegiaturaProfile), typeof(CFDIProfile));
 
 // Registrar FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -71,6 +71,10 @@ builder.Services.AddScoped<IValidator<UpdateInscripcionDto>, UpdateInscripcionVa
 builder.Services.AddScoped<IValidator<CreateAsistenciaDto>, CreateAsistenciaValidator>();
 builder.Services.AddScoped<IValidator<UpdateAsistenciaDto>, UpdateAsistenciaValidator>();
 
+// Registrar validadores explícitamente para inyección en servicios - Calificación
+builder.Services.AddScoped<IValidator<CreateCalificacionDto>, CreateCalificacionValidator>();
+builder.Services.AddScoped<IValidator<UpdateCalificacionDto>, UpdateCalificacionValidator>();
+
 // Registrar validadores explícitamente para inyección en servicios - CFDI
 builder.Services.AddScoped<IValidator<CreateCFDIDto>, CreateCFDIValidator>();
 builder.Services.AddScoped<IValidator<UpdateCFDIDto>, UpdateCFDIValidator>();
@@ -84,22 +88,49 @@ builder.Services.AddScoped<IAlumnoService, AlumnoService>();
 builder.Services.AddScoped<IGrupoService, GrupoService>();
 builder.Services.AddScoped<IInscripcionService, InscripcionService>();
 builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
-builder.Services.AddScoped<ICargoService, CargoService>();
+builder.Services.AddScoped<ICalificacionService, CalificacionService>();
+builder.Services.AddScoped<IColegiaturaService, ColegiaturaService>();
 builder.Services.AddScoped<ICFDIService, CFDIService>();
 
 // API controllers
 builder.Services.AddControllers();
 
-// Swagger/OpenAPI
+// Swagger/OpenAPI con configuración JWT
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+    });
 
-// CORS
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+// CORS - Política específica para Next.js
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("PermitirNextJS", builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins("http://localhost:3000")
                .AllowAnyMethod()
                .AllowAnyHeader();
     });
@@ -125,7 +156,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors("PermitirNextJS");
 app.UseAuthentication();
 app.UseAuthorization();
 

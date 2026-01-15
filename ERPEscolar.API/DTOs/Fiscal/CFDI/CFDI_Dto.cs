@@ -209,9 +209,9 @@ public class CFDIFullDataDto
     public int Id { get; set; }
 
     /// <summary>
-    /// Datos del cargo relacionado
+    /// Datos de la colegiatura relacionada
     /// </summary>
-    public CargoDto? Cargo { get; set; }
+    public ColegiaturaDto? Colegiatura { get; set; }
 
     /// <summary>
     /// UUID del SAT

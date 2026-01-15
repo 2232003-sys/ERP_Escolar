@@ -7,50 +7,50 @@ using ERPEscolar.API.DTOs.Finanzas;
 namespace ERPEscolar.API.Features.Finanzas;
 
 /// <summary>
-/// Controller para gestión de cargos.
+/// Controller para gestión de colegiaturas.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class CargosController : ControllerBase
+public class ColegiaturasController : ControllerBase
 {
-    private readonly ICargoService _cargoService;
-    private readonly ILogger<CargosController> _logger;
+    private readonly IColegiaturaService _colegiaturaService;
+    private readonly ILogger<ColegiaturasController> _logger;
 
-    public CargosController(ICargoService cargoService, ILogger<CargosController> logger)
+    public ColegiaturasController(IColegiaturaService colegiaturaService, ILogger<ColegiaturasController> logger)
     {
-        _cargoService = cargoService;
+        _colegiaturaService = colegiaturaService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Obtener listado de cargos con paginación y búsqueda.
+    /// Obtener listado de colegiaturas con paginación y búsqueda.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
     {
         try
         {
-            var result = await _cargoService.GetAllAsync(pageNumber, pageSize, searchTerm);
+            var result = await _colegiaturaService.GetAllAsync(pageNumber, pageSize, searchTerm);
             return Ok(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener cargos");
-            return StatusCode(500, new { message = "Error al obtener cargos." });
+            _logger.LogError(ex, "Error al obtener colegiaturas");
+            return StatusCode(500, new { message = "Error al obtener colegiaturas." });
         }
     }
 
     /// <summary>
-    /// Obtener cargo por ID.
+    /// Obtener colegiatura por ID.
     /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         try
         {
-            var cargo = await _cargoService.GetByIdAsync(id);
-            return Ok(cargo);
+            var colegiatura = await _colegiaturaService.GetByIdAsync(id);
+            return Ok(colegiatura);
         }
         catch (NotFoundException ex)
         {
@@ -58,21 +58,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener cargo {Id}", id);
-            return StatusCode(500, new { message = "Error al obtener el cargo." });
+            _logger.LogError(ex, "Error al obtener colegiatura {Id}", id);
+            return StatusCode(500, new { message = "Error al obtener la colegiatura." });
         }
     }
 
     /// <summary>
-    /// Obtener cargo con datos completos (relaciones incluidas).
+    /// Obtener colegiatura con datos completos (relaciones incluidas).
     /// </summary>
     [HttpGet("{id}/full")]
     public async Task<IActionResult> GetByIdFull(int id)
     {
         try
         {
-            var cargo = await _cargoService.GetByIdFullAsync(id);
-            return Ok(cargo);
+            var colegiatura = await _colegiaturaService.GetByIdFullAsync(id);
+            return Ok(colegiatura);
         }
         catch (NotFoundException ex)
         {
@@ -80,21 +80,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener cargo completo {Id}", id);
-            return StatusCode(500, new { message = "Error al obtener el cargo completo." });
+            _logger.LogError(ex, "Error al obtener colegiatura completa {Id}", id);
+            return StatusCode(500, new { message = "Error al obtener la colegiatura completa." });
         }
     }
 
     /// <summary>
-    /// Crear un nuevo cargo.
+    /// Crear una nueva colegiatura.
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCargoDto request)
+    public async Task<IActionResult> Create([FromBody] CreateColegiaturaDto request)
     {
         try
         {
-            var cargo = await _cargoService.CreateCargoAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = cargo.Id }, cargo);
+            var colegiatura = await _colegiaturaService.CreateColegiaturaAsync(request);
+            return CreatedAtAction(nameof(GetById), new { id = colegiatura.Id }, colegiatura);
         }
         catch (ValidationException ex)
         {
@@ -110,21 +110,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al crear cargo");
-            return StatusCode(500, new { message = "Error al crear el cargo." });
+            _logger.LogError(ex, "Error al crear colegiatura");
+            return StatusCode(500, new { message = "Error al crear la colegiatura." });
         }
     }
 
     /// <summary>
-    /// Actualizar un cargo existente.
+    /// Actualizar una colegiatura existente.
     /// </summary>
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateCargoDto request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateColegiaturaDto request)
     {
         try
         {
-            var cargo = await _cargoService.UpdateCargoAsync(id, request);
-            return Ok(cargo);
+            var colegiatura = await _colegiaturaService.UpdateColegiaturaAsync(id, request);
+            return Ok(colegiatura);
         }
         catch (ValidationException ex)
         {
@@ -140,20 +140,20 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al actualizar cargo {Id}", id);
-            return StatusCode(500, new { message = "Error al actualizar el cargo." });
+            _logger.LogError(ex, "Error al actualizar colegiatura {Id}", id);
+            return StatusCode(500, new { message = "Error al actualizar la colegiatura." });
         }
     }
 
     /// <summary>
-    /// Eliminar un cargo (soft delete).
+    /// Eliminar una colegiatura (soft delete).
     /// </summary>
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
         try
         {
-            await _cargoService.SoftDeleteAsync(id);
+            await _colegiaturaService.SoftDeleteAsync(id);
             return NoContent();
         }
         catch (NotFoundException ex)
@@ -166,21 +166,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al eliminar cargo {Id}", id);
-            return StatusCode(500, new { message = "Error al eliminar el cargo." });
+            _logger.LogError(ex, "Error al eliminar colegiatura {Id}", id);
+            return StatusCode(500, new { message = "Error al eliminar la colegiatura." });
         }
     }
 
     /// <summary>
-    /// Restaurar un cargo eliminado.
+    /// Restaurar una colegiatura eliminada.
     /// </summary>
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> Restore(int id)
     {
         try
         {
-            await _cargoService.RestoreAsync(id);
-            return Ok(new { message = "Cargo restaurado exitosamente." });
+            await _colegiaturaService.RestoreAsync(id);
+            return Ok(new { message = "Colegiatura restaurada exitosamente." });
         }
         catch (NotFoundException ex)
         {
@@ -192,21 +192,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al restaurar cargo {Id}", id);
-            return StatusCode(500, new { message = "Error al restaurar el cargo." });
+            _logger.LogError(ex, "Error al restaurar colegiatura {Id}", id);
+            return StatusCode(500, new { message = "Error al restaurar la colegiatura." });
         }
     }
 
     /// <summary>
-    /// Obtener cargos de un alumno específico.
+    /// Obtener colegiaturas de un alumno específico.
     /// </summary>
     [HttpGet("alumno/{alumnoId}")]
     public async Task<IActionResult> GetByAlumno(int alumnoId)
     {
         try
         {
-            var cargos = await _cargoService.GetCargosByAlumnoAsync(alumnoId);
-            return Ok(cargos);
+            var colegiaturas = await _colegiaturaService.GetColegiaturasByAlumnoAsync(alumnoId);
+            return Ok(colegiaturas);
         }
         catch (NotFoundException ex)
         {
@@ -214,21 +214,21 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener cargos del alumno {AlumnoId}", alumnoId);
-            return StatusCode(500, new { message = "Error al obtener los cargos del alumno." });
+            _logger.LogError(ex, "Error al obtener colegiaturas del alumno {AlumnoId}", alumnoId);
+            return StatusCode(500, new { message = "Error al obtener las colegiaturas del alumno." });
         }
     }
 
     /// <summary>
-    /// Obtener cargos pendientes de un alumno.
+    /// Obtener colegiaturas pendientes de un alumno.
     /// </summary>
     [HttpGet("alumno/{alumnoId}/pendientes")]
     public async Task<IActionResult> GetPendientesByAlumno(int alumnoId)
     {
         try
         {
-            var cargos = await _cargoService.GetCargosPendientesAsync(alumnoId);
-            return Ok(cargos);
+            var colegiaturas = await _colegiaturaService.GetColegiaturasPendientesAsync(alumnoId);
+            return Ok(colegiaturas);
         }
         catch (NotFoundException ex)
         {
@@ -236,8 +236,8 @@ public class CargosController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener cargos pendientes del alumno {AlumnoId}", alumnoId);
-            return StatusCode(500, new { message = "Error al obtener los cargos pendientes del alumno." });
+            _logger.LogError(ex, "Error al obtener colegiaturas pendientes del alumno {AlumnoId}", alumnoId);
+            return StatusCode(500, new { message = "Error al obtener las colegiaturas pendientes del alumno." });
         }
     }
 }

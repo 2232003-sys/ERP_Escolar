@@ -25,14 +25,19 @@ public class CicloEscolar
 public class PeriodoCalificacion
 {
     public int Id { get; set; }
+    public int SchoolId { get; set; }
     public int CicloEscolarId { get; set; }
-    public string Nombre { get; set; } = null!; // "1er Bimestre", "Semestre", etc.
-    public int Orden { get; set; }
+    public string Nombre { get; set; } = null!; // "Bimestre 1", "Bimestre 2", "Final"
+    public string Clave { get; set; } = null!; // "B1", "B2", "FINAL"
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
-    public DateTime FechaCierre { get; set; }
-    public bool Cerrado { get; set; } = false;
+    public DateTime? FechaCierre { get; set; } // Fecha límite para cerrar el período
+    public bool Cerrado { get; set; } = false; // Si el período está cerrado para modificaciones
+    public int Orden { get; set; } // Para ordenar períodos
+    public bool Activo { get; set; } = true;
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
+    public School School { get; set; } = null!;
     public CicloEscolar CicloEscolar { get; set; } = null!;
     public ICollection<Calificacion> Calificaciones { get; set; } = [];
 }

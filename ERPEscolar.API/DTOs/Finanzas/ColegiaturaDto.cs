@@ -3,12 +3,12 @@ using System.ComponentModel.DataAnnotations;
 namespace ERPEscolar.API.DTOs.Finanzas;
 
 /// <summary>
-/// DTO básico de Cargo - Respuesta GET
+/// DTO básico de Colegiatura - Respuesta GET
 /// </summary>
-public class CargoDto
+public class ColegiaturaDto
 {
     /// <summary>
-    /// Identificador único del cargo
+    /// Identificador único de la colegiatura
     /// </summary>
     public int Id { get; set; }
 
@@ -28,17 +28,17 @@ public class CargoDto
     public int CicloEscolarId { get; set; }
 
     /// <summary>
-    /// Folio único del cargo
+    /// Folio único de la colegiatura
     /// </summary>
     public string Folio { get; set; } = string.Empty;
 
     /// <summary>
-    /// Mes del cargo (formato YYYY-MM)
+    /// Mes de la colegiatura (formato YYYY-MM)
     /// </summary>
     public string Mes { get; set; } = string.Empty;
 
     /// <summary>
-    /// Monto base del cargo
+    /// Monto base de la colegiatura
     /// </summary>
     public decimal Monto { get; set; }
 
@@ -63,12 +63,12 @@ public class CargoDto
     public decimal IVA { get; set; }
 
     /// <summary>
-    /// Total del cargo
+    /// Total de la colegiatura
     /// </summary>
     public decimal Total { get; set; }
 
     /// <summary>
-    /// Estado del cargo: Pendiente, Parcial, Pagado, Cancelado
+    /// Estado de la colegiatura: Pendiente, Parcial, Pagado, Cancelado
     /// </summary>
     public string Estado { get; set; } = string.Empty;
 
@@ -78,7 +78,7 @@ public class CargoDto
     public decimal MontoRecibido { get; set; }
 
     /// <summary>
-    /// Fecha de emisión del cargo
+    /// Fecha de emisión de la colegiatura
     /// </summary>
     public DateTime FechaEmision { get; set; }
 
@@ -93,15 +93,15 @@ public class CargoDto
     public DateTime? FechaPago { get; set; }
 
     /// <summary>
-    /// Observaciones del cargo
+    /// Observaciones de la colegiatura
     /// </summary>
     public string? Observacion { get; set; }
 }
 
 /// <summary>
-/// DTO para crear un nuevo cargo - POST
+/// DTO para crear una nueva colegiatura - POST
 /// </summary>
-public class CreateCargoDto
+public class CreateColegiaturaDto
 {
     /// <summary>
     /// Identificador del alumno
@@ -122,14 +122,14 @@ public class CreateCargoDto
     public int CicloEscolarId { get; set; }
 
     /// <summary>
-    /// Mes del cargo (formato YYYY-MM)
+    /// Mes de la colegiatura (formato YYYY-MM)
     /// </summary>
     [Required(ErrorMessage = "El mes es requerido")]
     [RegularExpression(@"^\d{4}-\d{2}$", ErrorMessage = "El mes debe tener formato YYYY-MM")]
     public string Mes { get; set; } = string.Empty;
 
     /// <summary>
-    /// Monto base del cargo
+    /// Monto base de la colegiatura
     /// </summary>
     [Required(ErrorMessage = "El monto es requerido")]
     [Range(0.01, 999999.99, ErrorMessage = "El monto debe ser mayor a 0")]
@@ -166,12 +166,12 @@ public class CreateCargoDto
 }
 
 /// <summary>
-/// DTO para actualizar un cargo - PUT
+/// DTO para actualizar una colegiatura - PUT
 /// </summary>
-public class UpdateCargoDto
+public class UpdateColegiaturaDto
 {
     /// <summary>
-    /// Nuevo estado del cargo
+    /// Nuevo estado de la colegiatura
     /// </summary>
     [Required(ErrorMessage = "El estado es requerido")]
     [StringLength(20, ErrorMessage = "El estado debe tener máximo 20 caracteres")]
@@ -196,12 +196,12 @@ public class UpdateCargoDto
 }
 
 /// <summary>
-/// DTO de Cargo con datos completos (relaciones incluidas)
+/// DTO de Colegiatura con datos completos (relaciones incluidas)
 /// </summary>
-public class CargoFullDataDto
+public class ColegiaturaFullDataDto
 {
     /// <summary>
-    /// Identificador único del cargo
+    /// Identificador único de la colegiatura
     /// </summary>
     public int Id { get; set; }
 
@@ -221,12 +221,12 @@ public class CargoFullDataDto
     public CicloEscolarDto? CicloEscolar { get; set; }
 
     /// <summary>
-    /// Folio único del cargo
+    /// Folio único de la colegiatura
     /// </summary>
     public string Folio { get; set; } = string.Empty;
 
     /// <summary>
-    /// Mes del cargo
+    /// Mes de la colegiatura
     /// </summary>
     public string Mes { get; set; } = string.Empty;
 
@@ -297,14 +297,14 @@ public class CargoFullDataDto
 }
 
 /// <summary>
-/// DTO paginado de Cargos
+/// DTO paginado de Colegiaturas
 /// </summary>
-public class PaginatedCargosDto
+public class PaginatedColegiaturasDto
 {
     /// <summary>
-    /// Lista de cargos
+    /// Lista de colegiaturas
     /// </summary>
-    public List<CargoDto> Items { get; set; } = [];
+    public List<ColegiaturaDto> Items { get; set; } = [];
 
     /// <summary>
     /// Número de página actual (1-indexed)

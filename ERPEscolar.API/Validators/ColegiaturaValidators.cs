@@ -4,11 +4,11 @@ using FluentValidation;
 namespace ERPEscolar.API.Validators;
 
 /// <summary>
-/// Validador para la creación de cargos
+/// Validador para la creación de colegiaturas
 /// </summary>
-public class CreateCargoValidator : AbstractValidator<CreateCargoDto>
+public class CreateColegiaturaValidator : AbstractValidator<CreateColegiaturaDto>
 {
-    public CreateCargoValidator()
+    public CreateColegiaturaValidator()
     {
         RuleFor(x => x.AlumnoId)
             .GreaterThan(0)
@@ -75,11 +75,11 @@ public class CreateCargoValidator : AbstractValidator<CreateCargoDto>
 }
 
 /// <summary>
-/// Validador para la actualización de cargos
+/// Validador para la actualización de colegiaturas
 /// </summary>
-public class UpdateCargoValidator : AbstractValidator<UpdateCargoDto>
+public class UpdateColegiaturaValidator : AbstractValidator<UpdateColegiaturaDto>
 {
-    public UpdateCargoValidator()
+    public UpdateColegiaturaValidator()
     {
         RuleFor(x => x.Estado)
             .NotEmpty()

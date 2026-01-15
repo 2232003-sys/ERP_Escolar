@@ -5,15 +5,15 @@ using ERPEscolar.API.DTOs.Finanzas;
 namespace ERPEscolar.API.Infrastructure.Mappings;
 
 /// <summary>
-/// AutoMapper Profile para mapeos entre Cargo y sus DTOs.
+/// AutoMapper Profile para mapeos entre Colegiatura y sus DTOs.
 /// Configura las transformaciones automáticas de datos.
 /// </summary>
-public class CargoProfile : Profile
+public class ColegiaturaProfile : Profile
 {
-    public CargoProfile()
+    public ColegiaturaProfile()
     {
-        // CreateCargoDto -> Cargo (creación)
-        CreateMap<CreateCargoDto, Cargo>()
+        // CreateColegiaturaDto -> Cargo (creación)
+        CreateMap<CreateColegiaturaDto, Cargo>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.Folio, opt => opt.Ignore())  // Se genera en servicio
             .ForMember(dest => dest.Subtotal, opt => opt.MapFrom(src =>
@@ -30,14 +30,14 @@ public class CargoProfile : Profile
             .ForMember(dest => dest.ConceptoCobro, opt => opt.Ignore())
             .ForMember(dest => dest.CicloEscolar, opt => opt.Ignore());
 
-        // Cargo -> CargoDto (lectura básica)
-        CreateMap<Cargo, CargoDto>()
+        // Cargo -> ColegiaturaDto (lectura básica)
+        CreateMap<Cargo, ColegiaturaDto>()
             .ForMember(dest => dest.FechaEmision, opt => opt.MapFrom(src => src.FechaEmision))
             .ForMember(dest => dest.FechaVencimiento, opt => opt.MapFrom(src => src.FechaVencimiento))
             .ForMember(dest => dest.FechaPago, opt => opt.MapFrom(src => src.FechaPago));
 
-        // Cargo -> CargoFullDataDto (lectura con relaciones)
-        CreateMap<Cargo, CargoFullDataDto>()
+        // Cargo -> ColegiaturaFullDataDto (lectura con relaciones)
+        CreateMap<Cargo, ColegiaturaFullDataDto>()
             .ForMember(dest => dest.Alumno, opt => opt.MapFrom(src => src.Alumno))
             .ForMember(dest => dest.ConceptoCobro, opt => opt.MapFrom(src => src.ConceptoCobro))
             .ForMember(dest => dest.CicloEscolar, opt => opt.MapFrom(src => src.CicloEscolar))
@@ -46,8 +46,8 @@ public class CargoProfile : Profile
             .ForMember(dest => dest.FechaVencimiento, opt => opt.MapFrom(src => src.FechaVencimiento))
             .ForMember(dest => dest.FechaPago, opt => opt.MapFrom(src => src.FechaPago));
 
-        // UpdateCargoDto -> Cargo (actualización parcial)
-        CreateMap<UpdateCargoDto, Cargo>()
+        // UpdateColegiaturaDto -> Cargo (actualización parcial)
+        CreateMap<UpdateColegiaturaDto, Cargo>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.AlumnoId, opt => opt.Ignore())
             .ForMember(dest => dest.ConceptoCobroId, opt => opt.Ignore())

@@ -555,7 +555,7 @@ public class CFDIService : ICFDIService
         return new CFDIFullDataDto
         {
             Id = cfdi.Id,
-            Cargo = cfdi.Cargo != null ? new CargoDto
+            Colegiatura = cfdi.Cargo != null ? new ColegiaturaDto
             {
                 Id = cfdi.Cargo.Id,
                 AlumnoId = cfdi.Cargo.AlumnoId,
