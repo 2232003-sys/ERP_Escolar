@@ -35,13 +35,16 @@ public class Cargo
     public decimal Recargo { get; set; } = 0;
     public decimal Subtotal => Monto - Descuento + Recargo;
     public decimal IVA { get; set; } = 0; // 16% default en México
-    public decimal Total => Subtotal + IVA;
+    public decimal Total => Subtotal * (1 + IVA);
     public string Estado { get; set; } = "Pendiente"; // "Pendiente", "Parcial", "Pagado", "Cancelado"
     public decimal MontoRecibido { get; set; } = 0;
     public DateTime FechaEmision { get; set; } = DateTime.UtcNow;
     public DateTime? FechaVencimiento { get; set; }
     public DateTime? FechaPago { get; set; }
     public string? Observacion { get; set; }
+    public bool Activo { get; set; } = true;
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime? FechaActualizacion { get; set; }
 
     public Alumno Alumno { get; set; } = null!;
     public ConceptoCobro ConceptoCobro { get; set; } = null!;
@@ -68,7 +71,9 @@ public class Pago
     public string? BancoOrigen { get; set; }
     public string? Comprobante { get; set; } // Ruta del archivo comprobante (XML/PDF/imagen)
     public string? Observacion { get; set; }
+    public bool Activo { get; set; } = true;
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public DateTime? FechaActualizacion { get; set; }
 
     public Alumno Alumno { get; set; } = null!;
     public Cargo? Cargo { get; set; }

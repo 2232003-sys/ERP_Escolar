@@ -6,6 +6,9 @@ using ERPEscolar.API.Data;
 using ERPEscolar.API.Infrastructure.Services;
 using ERPEscolar.API.Infrastructure.Repositories;
 using ERPEscolar.API.DTOs.ControlEscolar;
+using ERPEscolar.API.DTOs.Finanzas;
+using ERPEscolar.API.DTOs.Fiscal;
+using ERPEscolar.API.Validators;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using ERPEscolar.API.Infrastructure.Validators;
@@ -46,7 +49,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Registrar AutoMapper - incluir todos los profiles
-builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile));
+builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CargoProfile), typeof(CFDIProfile));
 
 // Registrar FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -60,11 +63,29 @@ builder.Services.AddScoped<IValidator<UpdateAlumnoDto>, UpdateAlumnoValidator>()
 builder.Services.AddScoped<IValidator<CreateGrupoDto>, CreateGrupoValidator>();
 builder.Services.AddScoped<IValidator<UpdateGrupoDto>, UpdateGrupoValidator>();
 
+// Registrar validadores explícitamente para inyección en servicios - Inscripción
+builder.Services.AddScoped<IValidator<CreateInscripcionDto>, CreateInscripcionValidator>();
+builder.Services.AddScoped<IValidator<UpdateInscripcionDto>, UpdateInscripcionValidator>();
+
+// Registrar validadores explícitamente para inyección en servicios - Asistencia
+builder.Services.AddScoped<IValidator<CreateAsistenciaDto>, CreateAsistenciaValidator>();
+builder.Services.AddScoped<IValidator<UpdateAsistenciaDto>, UpdateAsistenciaValidator>();
+
+// Registrar validadores explícitamente para inyección en servicios - CFDI
+builder.Services.AddScoped<IValidator<CreateCFDIDto>, CreateCFDIValidator>();
+builder.Services.AddScoped<IValidator<UpdateCFDIDto>, UpdateCFDIValidator>();
+builder.Services.AddScoped<IValidator<TimbrarCFDIDto>, TimbrarCFDIValidator>();
+builder.Services.AddScoped<IValidator<CancelarCFDIDto>, CancelarCFDIValidator>();
+
 // Registrar servicios
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAlumnoService, AlumnoService>();
 builder.Services.AddScoped<IGrupoService, GrupoService>();
+builder.Services.AddScoped<IInscripcionService, InscripcionService>();
+builder.Services.AddScoped<IAsistenciaService, AsistenciaService>();
+builder.Services.AddScoped<ICargoService, CargoService>();
+builder.Services.AddScoped<ICFDIService, CFDIService>();
 
 // API controllers
 builder.Services.AddControllers();

@@ -97,10 +97,13 @@ public class Inscripcion
     public int CicloEscolarId { get; set; }
     public DateTime FechaInscripcion { get; set; } = DateTime.UtcNow;
     public bool Activo { get; set; } = true;
+    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
     public Alumno Alumno { get; set; } = null!;
     public Grupo Grupo { get; set; } = null!;
     public CicloEscolar CicloEscolar { get; set; } = null!;
+    public ICollection<Asistencia> Asistencias { get; set; } = [];
+    public ICollection<Calificacion> Calificaciones { get; set; } = [];
 }
 
 /// <summary>
@@ -109,15 +112,17 @@ public class Inscripcion
 public class Asistencia
 {
     public int Id { get; set; }
-    public int AlumnoId { get; set; }
+    public int InscripcionId { get; set; }
     public int GrupoMateriaId { get; set; }
     public int? DocenteQueRegistroId { get; set; }
     public DateTime Fecha { get; set; }
     public string Estado { get; set; } = null!; // "Presente", "Ausente", "Tarde", "Justificado"
-    public string? Observacion { get; set; }
+    public string? Observaciones { get; set; }
+    public string? RegistradoPor { get; set; }
+    public bool Activo { get; set; } = true;
     public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
-    public Alumno Alumno { get; set; } = null!;
+    public Inscripcion Inscripcion { get; set; } = null!;
     public GrupoMateria GrupoMateria { get; set; } = null!;
     public Docente? DocenteQueRegistro { get; set; }
 }
