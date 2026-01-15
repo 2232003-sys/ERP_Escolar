@@ -49,7 +49,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Registrar AutoMapper - incluir todos los profiles
-builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CalificacionProfile), typeof(ColegiaturaProfile), typeof(CFDIProfile), typeof(PagoProfile));
+builder.Services.AddAutoMapper(typeof(AlumnoProfile), typeof(GrupoProfile), typeof(InscripcionProfile), typeof(AsistenciaProfile), typeof(CalificacionProfile), typeof(ColegiaturaProfile), typeof(CFDIProfile), typeof(PagoProfile), typeof(BecaProfile));
 
 // Registrar FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -86,6 +86,10 @@ builder.Services.AddScoped<IValidator<CreatePagoDto>, CreatePagoValidator>();
 builder.Services.AddScoped<IValidator<UpdatePagoDto>, UpdatePagoValidator>();
 builder.Services.AddScoped<IValidator<PagoTransferenciaDto>, PagoTransferenciaValidator>();
 
+// Registrar validadores explícitamente para inyección en servicios - Beca
+builder.Services.AddScoped<IValidator<CreateBecaDto>, CreateBecaValidator>();
+builder.Services.AddScoped<IValidator<UpdateBecaDto>, UpdateBecaValidator>();
+
 // Registrar servicios
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -98,6 +102,7 @@ builder.Services.AddScoped<IColegiaturaService, ColegiaturaService>();
 builder.Services.AddScoped<ICFDIService, CFDIService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddScoped<IEstadoCuentaService, EstadoCuentaService>();
+builder.Services.AddScoped<IBecaService, BecaService>();
 
 // API controllers
 builder.Services.AddControllers();
